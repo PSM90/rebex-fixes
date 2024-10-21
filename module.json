@@ -4,7 +4,7 @@
   "description": "Modulo per effettuare fix su Compendi e Schede in Foundry VTT",
   "version": "1.0.0",
   "author": "Rebex",
-  "minimumCoreVersion": "12",
+  "minimumCoreVersion": "0.8.0",
   "compatibleCoreVersion": "12",
   "scripts": [
     "scripts/main.js",

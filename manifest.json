@@ -13,8 +13,8 @@
   "styles": [
     "styles/styles.css"
   ],
-  "manifest": "https://raw.githubusercontent.com/tuo-username/rebex-fixes/main/module.json",
-  "download": "https://github.com/tuo-username/rebex-fixes/archive/refs/heads/main.zip",
+  "manifest": "https://raw.githubusercontent.com/PSM90/Rebex-Fixes/refs/heads/main/manifest.json",
+  "download": "https://github.com/PSM90/Rebex-Fixes/archive/refs/heads/main.zip",
   "esmodules": [],
   "languages": [],
   "packs": [],

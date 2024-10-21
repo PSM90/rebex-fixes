@@ -15,12 +15,15 @@
         "minimum": "12",
         "verified": "12"
     },
+    "esmodules": [
+        "scripts/main.js",
+        "scripts/utilities.js"
+    ],
     "styles": [
         "styles/styles.css"
     ],
     "manifest": "https://raw.githubusercontent.com/PSM90/rebex-fixes/main/module.json",
     "download": "https://github.com/PSM90/rebex-fixes/archive/refs/heads/main.zip",
-    "esmodules": [],
     "languages": [],
     "packs": [],
     "relationships": {

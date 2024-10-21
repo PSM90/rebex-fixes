@@ -4,12 +4,21 @@ import { CompendiumUtilities, SpellConcentrationFixer } from './utilities.js';
 
 Hooks.once('init', () => {
     console.log('Rebex Fixes | Inizializzazione del modulo Rebex Fixes');
+
+    // Registra un'impostazione del modulo per visualizzare l'interfaccia
+    game.settings.registerMenu("rebex-fixes", "rebexFixesMenu", {
+        name: "Rebex Fixes",
+        label: "Apri Interfaccia di Fix",
+        hint: "Apri l'interfaccia per eseguire fix su compendi e schede.",
+        icon: "fas fa-wrench", // Puoi cambiare l'icona se preferisci
+        type: RebexFixesApp,
+        restricted: true // Solo i GM possono aprire questa impostazione
+    });
 });
 
 Hooks.once('ready', () => {
     if (game.user.isGM) {
         console.log('Rebex Fixes | Modulo pronto e disponibile per l\'uso');
-        new RebexFixesApp().render(true);
     }
 });
 
@@ -39,22 +48,7 @@ class RebexFixesApp extends FormApplication {
     }
 
     async _updateObject(event, formData) {
-        // Gestisce l'invio dei dati del form
+        // Gestisci l'invio dei dati del form
         console.log("Dati del form inviati:", formData);
     }
 }
-
-$(document).on('click', '#fix-actor-button', async function() {
-    const actorName = $('#actor-select').val();
-    await CompendiumUtilities.updateActorItems(actorName);
-});
-
-$(document).on('click', '#fix-compendium-button', async function() {
-    const compendiumName = $('#compendium-select').val();
-    await CompendiumUtilities.updateCompendiumItems(compendiumName);
-});
-
-$(document).on('click', '#fix-concentration-button', async function() {
-    const compendiumName = $('#compendium-select').val();
-    await SpellConcentrationFixer.fixConcentration(compendiumName);
-});

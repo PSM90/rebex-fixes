@@ -1,7 +1,3 @@
-#fix-menu {
-  padding: 10px;
-}
-
-.form-group {
-  margin-bottom: 15px;
+#rebex-fixes-app .form-group {
+    margin-bottom: 1em;
 }

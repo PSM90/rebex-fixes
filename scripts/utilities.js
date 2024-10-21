@@ -1,9 +1,8 @@
-// scripts/utilities.js
+// utilities.js
 
 export class CompendiumUtilities {
-    // Funzione per aggiornare gli oggetti di un attore
     static async updateActorItems(actorName) {
-        const actor = game.actors.getName(actorName);
+        let actor = game.actors.getName(actorName);
         if (!actor) {
             ui.notifications.error(`Personaggio "${actorName}" non trovato.`);
             return;
@@ -29,6 +28,7 @@ export class CompendiumUtilities {
                     }
                 };
 
+                console.log(`Aggiornamento item ${item.name}:`, updateData);
                 try {
                     await item.update(updateData);
                     console.log(`Item ${item.name} aggiornato con successo`);
@@ -37,11 +37,9 @@ export class CompendiumUtilities {
                 }
             }
         }
-
         ui.notifications.info(`${actor.name}: Oggetti aggiornati correttamente!`);
     }
 
-    // Funzione per aggiornare gli oggetti di un compendio
     static async updateCompendiumItems(compendiumName) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
@@ -75,6 +73,7 @@ export class CompendiumUtilities {
                     }
                 };
 
+                console.log(`Aggiornamento item compendio ${item.name}:`, updateData);
                 try {
                     await item.update(updateData);
                     console.log(`Item compendio ${item.name} aggiornato con successo`);
@@ -83,12 +82,37 @@ export class CompendiumUtilities {
                 }
             }
         }
-
         ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
+    }
+
+    static listCompendiums() {
+        game.packs.forEach(p => console.log(p.collection));
     }
 }
 
 export class SpellConcentrationFixer {
+    static async fixActorConcentration(actorName) {
+        const actor = game.actors.getName(actorName);
+        if (!actor) {
+            ui.notifications.error(`Personaggio "${actorName}" non trovato.`);
+            return;
+        }
+
+        let spells = actor.items.filter(item => item.type === "spell");
+        for (let spell of spells) {
+            if (spell.system.components?.concentration) {
+                try {
+                    await spell.update({ "system.components.concentration": true });
+                    console.log(`Concentrazione fissata per ${spell.name} di ${actorName}`);
+                } catch (error) {
+                    console.error(`Errore nella correzione di ${spell.name}:`, error);
+                }
+            }
+        }
+
+        ui.notifications.info(`Concentrazione fissata per tutte le spell di ${actorName}`);
+    }
+
     static async fixConcentration(compendiumName) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
@@ -98,16 +122,16 @@ export class SpellConcentrationFixer {
 
         const items = await pack.getDocuments();
         for (let item of items) {
-            if (item.type === "spell" && item.system.duration && item.system.duration.concentration) {
+            if (item.type === "spell" && item.system.components?.concentration) {
                 try {
-                    await item.update({ "system.duration.concentration": true });
-                    console.log(`Concentrazione aggiornata per ${item.name}`);
+                    await item.update({ "system.components.concentration": true });
+                    console.log(`Concentrazione fissata per ${item.name}`);
                 } catch (error) {
-                    console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
+                    console.error(`Errore nella correzione di ${item.name}:`, error);
                 }
             }
         }
 
-        ui.notifications.info(`Correzione della concentrazione completata per il compendio "${compendiumName}"`);
+        ui.notifications.info(`Concentrazione fissata per tutte le spell del compendio "${compendiumName}"`);
     }
 }

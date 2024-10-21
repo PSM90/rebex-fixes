@@ -69,21 +69,14 @@ class RebexFixesApp extends FormApplication {
     activateListeners(html) {
         super.activateListeners(html);
 
-        // Gestisci il click sul pulsante per fixare un attore
+        // Gestisci il click sul pulsante per fixare le schede PG
         html[0].querySelector('#fix-actor-button').addEventListener('click', async () => {
             const actorSelect = html[0].querySelector('#actor-select');
             const actorName = actorSelect.value;
             await CompendiumUtilities.updateActorItems(actorName);
         });
 
-        // Gestisci il click sul pulsante per fixare un compendio
-        html[0].querySelector('#fix-compendium-button').addEventListener('click', async () => {
-            const compendiumSelect = html[0].querySelector('#compendium-select');
-            const compendiumName = compendiumSelect.value;
-            await CompendiumUtilities.updateCompendiumItems(compendiumName);
-        });
-
-        // Gestisci il click sul pulsante per correggere la concentrazione
+        // Gestisci il click sul pulsante per fixare la concentrazione
         html[0].querySelector('#fix-concentration-button').addEventListener('click', async () => {
             const compendiumSelect = html[0].querySelector('#compendium-select');
             const compendiumName = compendiumSelect.value;

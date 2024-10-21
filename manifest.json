@@ -1,0 +1,24 @@
+{
+  "name": "rebex-fixes",
+  "title": "Rebex Fixes",
+  "description": "Modulo per effettuare fix su Compendi e Schede in Foundry VTT",
+  "version": "1.0.0",
+  "author": "Rebex",
+  "minimumCoreVersion": "12",
+  "compatibleCoreVersion": "12",
+  "scripts": [
+    "scripts/main.js",
+    "scripts/utilities.js"
+  ],
+  "styles": [
+    "styles/styles.css"
+  ],
+  "manifest": "https://raw.githubusercontent.com/tuo-username/rebex-fixes/main/module.json",
+  "download": "https://github.com/tuo-username/rebex-fixes/archive/refs/heads/main.zip",
+  "esmodules": [],
+  "languages": [],
+  "packs": [],
+  "dependencies": [],
+  "socket": false,
+  "system": []
+}

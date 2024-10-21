@@ -1,0 +1,11 @@
+<form>
+  <div class="form-group">
+    <label for="compendium-select">Seleziona Compendio:</label>
+    <select id="compendium-select" name="compendium">
+      {{#each compendiums}}
+        <option value="{{this}}">{{this}}</option>
+      {{/each}}
+    </select>
+    <button type="button" id="fix-compendium">Esegui Fix Compendio</button>
+  </div>
+</form>

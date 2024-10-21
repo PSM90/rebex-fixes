@@ -46,7 +46,7 @@ class RebexFixesApp extends FormApplication {
         return mergeObject(super.defaultOptions, {
             id: "rebex-fixes-app",
             title: "Rebex Fixes",
-            template: "templates/rebex-fixes.html",
+            template: "modules/rebex-fixes/templates/rebex-fixes.html",
             width: 500,
             height: "auto",
             closeOnSubmit: true

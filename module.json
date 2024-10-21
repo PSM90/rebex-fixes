@@ -15,10 +15,6 @@
         "minimum": "12",
         "verified": "12"
     },
-    "scripts": [
-        "scripts/main.js",
-        "scripts/utilities.js"
-    ],
     "styles": [
         "styles/styles.css"
     ],

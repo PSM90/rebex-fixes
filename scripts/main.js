@@ -2,11 +2,9 @@
 
 import { CompendiumUtilities, SpellConcentrationFixer } from './utilities.js';
 
-// Inizializzazione del modulo
-Hooks.once('init', () => {
-    console.log('Rebex Fixes | Inizializzazione del modulo Rebex Fixes');
-
-    // Registra un'impostazione del modulo per visualizzare l'interfaccia nelle Impostazioni di gioco
+// Funzione per registrare le impostazioni
+function registerSettings() {
+    // Registra un'impostazione del modulo per aprire il menu
     game.settings.registerMenu("rebex-fixes", "rebexFixesMenu", {
         name: "Rebex Fixes",
         label: "Rebex Fixes",
@@ -16,7 +14,7 @@ Hooks.once('init', () => {
         restricted: true // Solo i GM possono aprire questa impostazione
     });
 
-    // Registra una dummy setting per mantenere il menu nel registro
+    // Registra una dummy setting per mantenere l'impostazione
     game.settings.register("rebex-fixes", "dummySetting", {
         name: "Rebex Fixes Setting",
         scope: "world",
@@ -24,6 +22,12 @@ Hooks.once('init', () => {
         default: "",
         type: String
     });
+}
+
+// Inizializzazione del modulo
+Hooks.once('init', () => {
+    console.log('Rebex Fixes | Inizializzazione del modulo Rebex Fixes');
+    registerSettings();
 });
 
 Hooks.once('ready', () => {
@@ -52,8 +56,8 @@ class RebexFixesApp extends FormApplication {
     async getData() {
         // Passaggio dei dati al template HTML
         return {
-            actors: game.actors.entities,
-            compendiums: game.packs.keys()
+            actors: game.actors.map(actor => actor.name),
+            compendiums: game.packs.map(pack => pack.collection)
         };
     }
 

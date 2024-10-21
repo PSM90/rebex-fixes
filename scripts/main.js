@@ -70,20 +70,20 @@ class RebexFixesApp extends FormApplication {
         super.activateListeners(html);
 
         // Rendi visibili solo le opzioni pertinenti in base al tipo di fix selezionato
-        const fixTypeSelect = html[0].querySelector('#fix-type');
-        const actorSelect = html[0].querySelector('#actor-select');
-        const compendiumSelect = html[0].querySelector('#compendium-select');
-        const fixActorButton = html[0].querySelector('#fix-actor-button');
-        const fixConcentrationButton = html[0].querySelector('#fix-concentration-button');
+        const fixTypeSelect = html.find('#fix-type');
+        const actorSelect = html.find('#actor-select');
+        const compendiumSelect = html.find('#compendium-select');
+        const fixActorButton = html.find('#fix-actor-button');
+        const fixConcentrationButton = html.find('#fix-concentration-button');
 
         function updateFormVisibility() {
-            const fixType = fixTypeSelect.value;
+            const fixType = fixTypeSelect.val();
             if (fixType === "actor") {
-                actorSelect.style.display = "block";
-                compendiumSelect.style.display = "none";
+                actorSelect.show();
+                compendiumSelect.hide();
             } else {
-                actorSelect.style.display = "none";
-                compendiumSelect.style.display = "block";
+                actorSelect.hide();
+                compendiumSelect.show();
             }
         }
 
@@ -91,26 +91,27 @@ class RebexFixesApp extends FormApplication {
         updateFormVisibility();
 
         // Cambia la visibilità quando si cambia il tipo di fix
-        fixTypeSelect.addEventListener('change', updateFormVisibility);
+        fixTypeSelect.on('change', updateFormVisibility);
 
         // Gestisci il click sul pulsante per fixare le schede PG
-        fixActorButton.addEventListener('click', async () => {
-            const actorName = actorSelect.value;
+        fixActorButton.on('click', async () => {
+            const actorName = actorSelect.val();
             await CompendiumUtilities.updateActorItems(actorName);
         });
 
         // Gestisci il click sul pulsante per fixare la concentrazione
-        fixConcentrationButton.addEventListener('click', async () => {
-            const fixType = fixTypeSelect.value;
+        fixConcentrationButton.on('click', async () => {
+            const fixType = fixTypeSelect.val();
             if (fixType === "actor") {
                 // Esegui il fix della concentrazione sulle spell della scheda PG
-                const actorName = actorSelect.value;
+                const actorName = actorSelect.val();
                 await SpellConcentrationFixer.fixActorConcentration(actorName);
             } else if (fixType === "compendium") {
                 // Esegui il fix della concentrazione su tutte le spell del compendio
-                const compendiumName = compendiumSelect.value;
+                const compendiumName = compendiumSelect.val();
                 await SpellConcentrationFixer.fixConcentration(compendiumName);
             }
         });
     }
+
 }

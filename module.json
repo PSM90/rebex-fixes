@@ -1,7 +1,7 @@
 {
     "title": "Rebex Fixes",
     "description": "Rebex fixes",
-    "version": "1.0.7",
+    "version": "1.0.0",
     "authors": [
         {
             "name": "Rebex",
@@ -10,7 +10,7 @@
         }
     ],
     "languages": [],
-    "scripts": [
+    "esmodules": [
         "scripts/main.js",
         "scripts/utilities.js"
     ],

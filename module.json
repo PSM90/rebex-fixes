@@ -12,7 +12,7 @@
     "languages": [],
     "esmodules": [
         "scripts/main.js",
-        "scripts/utilities.js",
+        "scripts/utilities.js"
     ],
     "styles": [
         "styles/style.css"

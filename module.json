@@ -2,7 +2,7 @@
   "name": "Rebex-Fixes",
   "title": "Rebex Fixes",
   "description": "Modulo per effettuare fix su Compendi e Schede in Foundry VTT",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "Rebex",
   "minimumCoreVersion": "0.8.0",
   "compatibleCoreVersion": "12",

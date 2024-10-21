@@ -1,34 +1,32 @@
 {
-    "id": "rebex-fixes",
     "title": "Rebex Fixes",
-    "description": "Modulo per effettuare fix su Compendi e Schede in Foundry VTT",
-    "version": "1.0.2",
-    "type": "module",
+    "description": "Rebex fixes",
+    "version": "1.0.1",
     "authors": [
         {
             "name": "Rebex",
-            "email": "example@example.com",
+            "email": "rebex@live.it",
             "url": "https://github.com/PSM90"
         }
     ],
-    "compatibility": {
-        "minimum": "12",
-        "verified": "12"
-    },
+    "languages": [],
     "esmodules": [
         "scripts/main.js",
-        "scripts/utilities.js"
+        "scripts/utilities.js",
     ],
     "styles": [
-        "styles/styles.css"
+        "styles/style.css"
     ],
+    "url": "https://raw.githubusercontent.com/PSM90/rebex-fixes/",
     "manifest": "https://raw.githubusercontent.com/PSM90/rebex-fixes/main/module.json",
     "download": "https://github.com/PSM90/rebex-fixes/archive/refs/heads/main.zip",
-    "languages": [],
-    "packs": [],
+    "socket": true,
+    "id": "rebex-fixes",
     "relationships": {
         "requires": []
     },
-    "socket": false,
-    "url": "https://github.com/PSM90/rebex-fixes"
+    "compatibility": {
+        "minimum": "12",
+        "verified": "12"
+    }
 }

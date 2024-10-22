@@ -1,20 +1,17 @@
-// scripts/main.js
+// main.js
 
 import { CompendiumUtilities, SpellConcentrationFixer } from './utilities.js';
 
-// Funzione per registrare le impostazioni
 function registerSettings() {
-    // Registra un'impostazione del modulo per aprire il menu
     game.settings.registerMenu("rebex-fixes", "rebexFixesMenu", {
         name: "Rebex Fixes",
         label: "Rebex Fixes",
         hint: "Apri l'interfaccia per eseguire fix su compendi e schede.",
         icon: "fas fa-wrench",
         type: RebexFixesApp,
-        restricted: true // Solo i GM possono aprire questa impostazione
+        restricted: true
     });
 
-    // Registra una dummy setting per mantenere l'impostazione
     game.settings.register("rebex-fixes", "dummySetting", {
         name: "Rebex Fixes Setting",
         scope: "world",
@@ -24,7 +21,6 @@ function registerSettings() {
     });
 }
 
-// Inizializzazione del modulo
 Hooks.once('init', () => {
     console.log('Rebex Fixes | Inizializzazione del modulo Rebex Fixes');
     registerSettings();
@@ -36,7 +32,6 @@ Hooks.once('ready', () => {
     }
 });
 
-// Classe per gestire l'interfaccia dell'utente del modulo
 class RebexFixesApp extends FormApplication {
     constructor() {
         super();
@@ -54,7 +49,6 @@ class RebexFixesApp extends FormApplication {
     }
 
     async getData() {
-        // Passaggio dei dati al template HTML
         return {
             actors: game.actors.map(actor => actor.name),
             compendiums: game.packs.map(pack => pack.collection)
@@ -62,14 +56,12 @@ class RebexFixesApp extends FormApplication {
     }
 
     async _updateObject(event, formData) {
-        // Gestisci l'invio dei dati del form
         console.log("Dati del form inviati:", formData);
     }
 
     activateListeners(html) {
         super.activateListeners(html);
 
-        // Rendi visibili solo le opzioni pertinenti in base al tipo di fix selezionato
         const fixTypeSelect = html.find('#fix-type');
         const actorSelect = html.find('#actor-select');
         const compendiumSelect = html.find('#compendium-select');
@@ -87,31 +79,24 @@ class RebexFixesApp extends FormApplication {
             }
         }
 
-        // Aggiorna la visibilità iniziale
         updateFormVisibility();
 
-        // Cambia la visibilità quando si cambia il tipo di fix
         fixTypeSelect.on('change', updateFormVisibility);
 
-        // Gestisci il click sul pulsante per fixare le schede PG
         fixActorButton.on('click', async () => {
             const actorName = actorSelect.val();
             await CompendiumUtilities.updateActorItems(actorName);
         });
 
-        // Gestisci il click sul pulsante per fixare la concentrazione
         fixConcentrationButton.on('click', async () => {
             const fixType = fixTypeSelect.val();
             if (fixType === "actor") {
-                // Esegui il fix della concentrazione sulle spell della scheda PG
                 const actorName = actorSelect.val();
-                await SpellConcentrationFixer.fixActorConcentration(actorName);
+                await SpellConcentrationFixer.updateActorSpells(actorName);
             } else if (fixType === "compendium") {
-                // Esegui il fix della concentrazione su tutte le spell del compendio
                 const compendiumName = compendiumSelect.val();
-                await SpellConcentrationFixer.fixConcentration(compendiumName);
+                await SpellConcentrationFixer.updateCompendiumSpells(compendiumName);
             }
         });
     }
-
 }

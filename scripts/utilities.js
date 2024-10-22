@@ -84,54 +84,74 @@ export class CompendiumUtilities {
         }
         ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
     }
-
-    static listCompendiums() {
-        game.packs.forEach(p => console.log(p.collection));
-    }
 }
 
 export class SpellConcentrationFixer {
-    static async fixActorConcentration(actorName) {
-        const actor = game.actors.getName(actorName);
+    static async updateActorSpells(actorName) {
+        let actor = game.actors.getName(actorName);
         if (!actor) {
             ui.notifications.error(`Personaggio "${actorName}" non trovato.`);
             return;
         }
 
-        let spells = actor.items.filter(item => item.type === "spell");
-        for (let spell of spells) {
-            if (spell.system.components?.concentration) {
-                try {
-                    await spell.update({ "system.components.concentration": true });
-                    console.log(`Concentrazione fissata per ${spell.name} di ${actorName}`);
-                } catch (error) {
-                    console.error(`Errore nella correzione di ${spell.name}:`, error);
+        for (let item of actor.items) {
+            if (item.type === "spell" && item.system.duration?.units === "hour") {
+                let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
+
+                if (!properties.includes("concentration")) {
+                    const updateData = {
+                        "flags.midiProperties.concentration": true,
+                        "system.activities.dnd5eactivity000.duration.concentration": true,
+                        "system.properties": [...properties, "concentration"]
+                    };
+
+                    console.log(`Aggiornamento concentrazione spell ${item.name}:`, updateData);
+                    try {
+                        await item.update(updateData);
+                        console.log(`Concentrazione spell ${item.name} aggiornata con successo`);
+                    } catch (error) {
+                        console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
+                    }
                 }
             }
         }
-
-        ui.notifications.info(`Concentrazione fissata per tutte le spell di ${actorName}`);
+        ui.notifications.info(`${actor.name}: Spell aggiornate correttamente!`);
     }
 
-    static async fixConcentration(compendiumName) {
+    static async updateCompendiumSpells(compendiumName) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
             ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
             return;
         }
 
+        if (pack.locked) {
+            await pack.configure({ locked: false });
+        }
+
         const items = await pack.getDocuments();
+
         for (let item of items) {
-            if (item.type === "spell" && item.system.components?.concentration) {
-                try {
-                    await item.update({ "system.components.concentration": true });
-                    console.log(`Concentrazione fissata per ${item.name}`);
-                } catch (error) {
-                    console.error(`Errore nella correzione di ${item.name}:`, error);
+            if (item.type === "spell" && item.system.duration?.units === "hour") {
+                let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
+
+                if (!properties.includes("concentration")) {
+                    const updateData = {
+                        "flags.midiProperties.concentration": true,
+                        "system.activities.dnd5eactivity000.duration.concentration": true,
+                        "system.properties": [...properties, "concentration"]
+                    };
+
+                    console.log(`Aggiornamento concentrazione spell compendio ${item.name}:`, updateData);
+                    try {
+                        await item.update(updateData);
+                        console.log(`Concentrazione spell compendio ${item.name} aggiornata con successo`);
+                    } catch (error) {
+                        console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
+                    }
                 }
             }
         }
-
-        ui.notifications.info(`Concentrazione fissata per tutte le spell del compendio "${compendiumName}"`);
+        ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
     }
 }

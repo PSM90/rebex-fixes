@@ -14,7 +14,8 @@ export class CompendiumUtilities {
                 const updateData = {
                     "system.uses.max": "",
                     "system.uses.spent": 0,
-                    "system.activities": {
+                    "system.activities": item.system.activities ? {
+                        ...item.system.activities,
                         "dnd5eactivity000": {
                             ...item.system.activities.dnd5eactivity000,
                             "consumption": {
@@ -26,7 +27,7 @@ export class CompendiumUtilities {
                                 "spellSlot": true
                             }
                         }
-                    }
+                    } : {}
                 };
 
                 console.log(`Aggiornamento item ${item.name}:`, updateData);
@@ -60,7 +61,8 @@ export class CompendiumUtilities {
                 const updateData = {
                     "system.uses.max": "",
                     "system.uses.spent": 0,
-                    "system.activities": {
+                    "system.activities": item.system.activities ? {
+                        ...item.system.activities,
                         "dnd5eactivity000": {
                             ...item.system.activities.dnd5eactivity000,
                             "consumption": {
@@ -72,7 +74,7 @@ export class CompendiumUtilities {
                                 "spellSlot": true
                             }
                         }
-                    }
+                    } : {}
                 };
 
                 console.log(`Aggiornamento item compendio ${item.name}:`, updateData);
@@ -98,8 +100,8 @@ export class SpellConcentrationFixer {
         }
 
         for (let item of actor.items) {
-            // Controlla se l'oggetto è un incantesimo e richiede concentrazione secondo i suoi dati
-            if (item.type === "spell" && item.system.duration?.units && item.system.components?.concentration) {
+            // Controlla se l'oggetto è un incantesimo e richiede concentrazione
+            if (item.type === "spell" && item.system.duration?.units === "hour") {
                 let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
 
                 if (!properties.includes("concentration")) {
@@ -137,8 +139,8 @@ export class SpellConcentrationFixer {
         const items = await pack.getDocuments();
 
         for (let item of items) {
-            // Controlla se l'oggetto è un incantesimo e richiede concentrazione secondo i suoi dati
-            if (item.type === "spell" && item.system.duration?.units && item.system.components?.concentration) {
+            // Controlla se l'oggetto è un incantesimo e richiede concentrazione
+            if (item.type === "spell" && item.system.duration?.units === "hour") {
                 let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
 
                 if (!properties.includes("concentration")) {

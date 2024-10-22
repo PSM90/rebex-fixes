@@ -1,8 +1,6 @@
-// utilities.js
-
 export class CompendiumUtilities {
-    // Funzione per aggiornare gli oggetti di una scheda personaggio se 0/0
-    static async updateActorItems(actorName) {
+    // Funzione per aggiornare gli oggetti e le spell di una scheda personaggio se 0/0 o per correggere la concentrazione
+    static async updateActorItemsAndSpells(actorName) {
         let actor = game.actors.getName(actorName);
         if (!actor) {
             ui.notifications.error(`Personaggio "${actorName}" non trovato.`);
@@ -10,40 +8,14 @@ export class CompendiumUtilities {
         }
 
         for (let item of actor.items) {
-            if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
-                const updateData = {
-                    "system.uses.max": "",
-                    "system.uses.spent": 0,
-                    "system.activities": item.system.activities ? {
-                        ...item.system.activities,
-                        "dnd5eactivity000": {
-                            ...item.system.activities.dnd5eactivity000,
-                            "consumption": {
-                                "targets": [],
-                                "scaling": {
-                                    "allowed": false,
-                                    "max": ""
-                                },
-                                "spellSlot": true
-                            }
-                        }
-                    } : {}
-                };
-
-                console.log(`Aggiornamento item ${item.name}:`, updateData);
-                try {
-                    await item.update(updateData);
-                    console.log(`Item ${item.name} aggiornato con successo`);
-                } catch (error) {
-                    console.error(`Errore nell'aggiornamento di ${item.name}:`, error);
-                }
-            }
+            await this.updateItem(item);
         }
-        ui.notifications.info(`${actor.name}: Oggetti aggiornati correttamente!`);
+
+        ui.notifications.info(`${actor.name}: Oggetti e incantesimi aggiornati correttamente!`);
     }
 
-    // Funzione per aggiornare tutti gli oggetti in un compendio se 0/0
-    static async updateCompendiumItems(compendiumName) {
+    // Funzione per aggiornare tutti gli oggetti e gli incantesimi in un compendio
+    static async updateCompendiumItemsAndSpells(compendiumName) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
             ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
@@ -57,139 +29,63 @@ export class CompendiumUtilities {
         const items = await pack.getDocuments();
 
         for (let item of items) {
-            // Controlla se è una scheda personaggio e aggiorna i suoi oggetti
+            // Controlla se è una scheda personaggio e aggiorna i suoi oggetti e spell
             if (item.type === "character") {
                 for (let subItem of item.items) {
-                    if (subItem.system.uses && (subItem.system.uses.max === 0 || subItem.system.uses.max === "") && subItem.system.uses.spent === 0) {
-                        const updateData = {
-                            "system.uses.max": "",
-                            "system.uses.spent": 0
-                        };
-
-                        console.log(`Aggiornamento item ${subItem.name} nella scheda ${item.name}:`, updateData);
-                        try {
-                            await subItem.update(updateData);
-                            console.log(`Item ${subItem.name} aggiornato con successo`);
-                        } catch (error) {
-                            console.error(`Errore nell'aggiornamento di ${subItem.name}:`, error);
-                        }
-                    }
+                    await this.updateItem(subItem);
                 }
-            }
-            // Altrimenti, aggiorna come oggetto normale
-            else if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
-                const updateData = {
-                    "system.uses.max": "",
-                    "system.uses.spent": 0
-                };
-
-                console.log(`Aggiornamento item compendio ${item.name}:`, updateData);
-                try {
-                    await item.update(updateData);
-                    console.log(`Item compendio ${item.name} aggiornato con successo`);
-                } catch (error) {
-                    console.error(`Errore nell'aggiornamento di ${item.name}:`, error);
-                }
+            } else {
+                // Aggiorna direttamente l'oggetto normale nel compendio
+                await this.updateItem(item);
             }
         }
+
+        await pack.configure({ locked: true });
         ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
     }
-}
 
-export class SpellConcentrationFixer {
-    // Funzione per aggiornare la concentrazione delle spell di un attore
-    static async updateActorSpells(actorName) {
-        let actor = game.actors.getName(actorName);
-        if (!actor) {
-            ui.notifications.error(`Personaggio "${actorName}" non trovato.`);
-            return;
-        }
+    // Funzione per aggiornare un singolo oggetto o spell
+    static async updateItem(item) {
+        let updateData = {};
 
-        for (let item of actor.items) {
-            // Controlla se l'oggetto è un incantesimo e richiede concentrazione
-            if (item.type === "spell" && item.system.duration?.units && ["minute", "hour", "day"].includes(item.system.duration.units) && !item.system.duration.concentration) {
-                let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
-
-                if (!properties.includes("concentration")) {
-                    const updateData = {
-                        "flags.midiProperties.concentration": true,
-                        "system.duration.concentration": true,
-                        "system.properties": [...properties, "concentration"]
-                    };
-
-                    console.log(`Aggiornamento concentrazione spell ${item.name}:`, updateData);
-                    try {
-                        await item.update(updateData);
-                        console.log(`Concentrazione spell ${item.name} aggiornata con successo`);
-                    } catch (error) {
-                        console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
+        // Controllo 0/0 per oggetti normali e incantesimi
+        if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
+            updateData["system.uses.max"] = "";
+            updateData["system.uses.spent"] = 0;
+            updateData["system.activities"] = item.system.activities ? {
+                ...item.system.activities,
+                "dnd5eactivity000": {
+                    ...item.system.activities.dnd5eactivity000,
+                    "consumption": {
+                        "targets": [],
+                        "scaling": {
+                            "allowed": false,
+                            "max": ""
+                        },
+                        "spellSlot": true
                     }
                 }
+            } : {};
+        }
+
+        // Controllo concentrazione per incantesimi
+        if (item.type === "spell" && item.system.duration?.units && ["minute", "hour", "day"].includes(item.system.duration.units) && !item.system.duration.concentration) {
+            let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
+            if (!properties.includes("concentration")) {
+                updateData["flags.midiProperties.concentration"] = true;
+                updateData["system.duration.concentration"] = true;
+                updateData["system.properties"] = [...properties, "concentration"];
             }
         }
-        ui.notifications.info(`${actor.name}: Spell aggiornate correttamente!`);
-    }
 
-    // Funzione per aggiornare la concentrazione delle spell in un compendio
-    static async updateCompendiumSpells(compendiumName) {
-        const pack = game.packs.get(compendiumName);
-        if (!pack) {
-            ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
-            return;
-        }
-
-        if (pack.locked) {
-            await pack.configure({ locked: false });
-        }
-
-        const items = await pack.getDocuments();
-
-        for (let item of items) {
-            // Controlla se è una scheda personaggio e aggiorna i suoi incantesimi
-            if (item.type === "character") {
-                for (let subItem of item.items) {
-                    if (subItem.type === "spell" && subItem.system.duration?.units && ["minute", "hour", "day"].includes(subItem.system.duration.units) && !subItem.system.duration.concentration) {
-                        let properties = Array.isArray(subItem.system.properties) ? subItem.system.properties : [];
-
-                        if (!properties.includes("concentration")) {
-                            const updateData = {
-                                "flags.midiProperties.concentration": true,
-                                "system.duration.concentration": true,
-                                "system.properties": [...properties, "concentration"]
-                            };
-
-                            console.log(`Aggiornamento concentrazione spell ${subItem.name} nella scheda ${item.name}:`, updateData);
-                            try {
-                                await subItem.update(updateData);
-                                console.log(`Concentrazione spell ${subItem.name} aggiornata con successo`);
-                            } catch (error) {
-                                console.error(`Errore nell'aggiornamento della concentrazione di ${subItem.name}:`, error);
-                            }
-                        }
-                    }
-                }
-            }
-            // Altrimenti, aggiorna come oggetto normale
-            else if (item.type === "spell" && item.system.duration?.units && ["minute", "hour", "day"].includes(item.system.duration.units) && !item.system.duration.concentration) {
-                let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
-
-                if (!properties.includes("concentration")) {
-                    const updateData = {
-                        "flags.midiProperties.concentration": true,
-                        "system.duration.concentration": true,
-                        "system.properties": [...properties, "concentration"]
-                    };
-
-                    console.log(`Aggiornamento concentrazione spell compendio ${item.name}:`, updateData);
-                    try {
-                        await item.update(updateData);
-                        console.log(`Concentrazione spell compendio ${item.name} aggiornata con successo`);
-                    } catch (error) {
-                        console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
-                    }
-                }
+        // Se ci sono modifiche da applicare, esegui l'aggiornamento
+        if (Object.keys(updateData).length > 0) {
+            try {
+                await item.update(updateData);
+                console.log(`Item ${item.name} aggiornato con successo`, updateData);
+            } catch (error) {
+                console.error(`Errore nell'aggiornamento di ${item.name}:`, error);
             }
         }
-        ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
     }
 }

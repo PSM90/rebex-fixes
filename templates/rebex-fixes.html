@@ -1,34 +1,46 @@
-<!-- templates/rebex-fixes.html -->
-
 <form>
     <div class="form-group">
-        <label for="fix-type">Tipo di Fix:</label>
-        <select id="fix-type" name="fixType">
-            <option value="actor">Scheda PG</option>
+        <label for="fixTarget">Seleziona Target:</label>
+        <select id="fixTarget" name="fixTarget">
+            <option value="actor">Scheda Personaggio</option>
             <option value="compendium">Compendio</option>
         </select>
     </div>
-
     <div class="form-group">
-        <label for="actor-select">Seleziona una Scheda PG:</label>
-        <select id="actor-select" name="actor">
-            {{#each actors}}
-            <option value="{{this}}">{{this}}</option>
-            {{/each}}
-        </select>
+        <label for="actorName">Nome Scheda Personaggio:</label>
+        <input type="text" id="actorName" name="actorName" placeholder="Inserisci il nome della scheda">
     </div>
-
     <div class="form-group">
-        <label for="compendium-select">Seleziona un Compendio:</label>
-        <select id="compendium-select" name="compendium">
-            {{#each compendiums}}
-            <option value="{{this}}">{{this}}</option>
-            {{/each}}
-        </select>
+        <label for="compendiumName">Nome Compendio:</label>
+        <input type="text" id="compendiumName" name="compendiumName" placeholder="Inserisci il nome del compendio">
     </div>
-
     <div class="form-group">
-        <button type="button" id="fix-actor-button">Fix Usi 0/0</button>
-        <button type="button" id="fix-concentration-button">Fix Concentrazione</button>
+        <label for="fixType">Tipo di Fix:</label>
+        <select id="fixType" name="fixType">
+            <option value="items">Oggetti (0/0)</option>
+            <option value="spells">Incantesimi (Concentrazione)</option>
+        </select>
     </div>
 </form>
+
+<script>
+    // JavaScript per abilitare/disabilitare i campi in base alla selezione del target
+    document.addEventListener('DOMContentLoaded', () => {
+        const fixTargetSelect = document.getElementById('fixTarget');
+        const actorNameInput = document.getElementById('actorName');
+        const compendiumNameInput = document.getElementById('compendiumName');
+
+        const updateInputVisibility = () => {
+            if (fixTargetSelect.value === 'actor') {
+                actorNameInput.disabled = false;
+                compendiumNameInput.disabled = true;
+            } else {
+                actorNameInput.disabled = true;
+                compendiumNameInput.disabled = false;
+            }
+        };
+
+        fixTargetSelect.addEventListener('change', updateInputVisibility);
+        updateInputVisibility();
+    });
+</script>

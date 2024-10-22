@@ -51,7 +51,9 @@ class RebexFixesApp extends FormApplication {
     async getData() {
         return {
             actors: game.actors.map(actor => actor.name),
-            compendiums: game.packs.map(pack => pack.collection)
+            compendiums: game.packs.filter(pack =>
+                pack.documentName === "Item" || pack.documentName === "Actor"
+            ).map(pack => pack.collection)
         };
     }
 
@@ -83,9 +85,19 @@ class RebexFixesApp extends FormApplication {
 
         fixTypeSelect.on('change', updateFormVisibility);
 
+        async function fix0_0() {
+            const fixType = fixTypeSelect.val();
+            if (fixType === "actor") {
+                const actorName = actorSelect.val();
+                await CompendiumUtilities.updateActorItems(actorName);
+            } else if (fixType === "compendium") {
+                const compendiumName = compendiumSelect.val();
+                await CompendiumUtilities.updateCompendiumItems(compendiumName);
+            }
+        }
+
         fixActorButton.on('click', async () => {
-            const actorName = actorSelect.val();
-            await CompendiumUtilities.updateActorItems(actorName);
+            await fix0_0();
         });
 
         fixConcentrationButton.on('click', async () => {

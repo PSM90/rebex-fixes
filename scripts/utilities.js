@@ -1,6 +1,7 @@
 // utilities.js
 
 export class CompendiumUtilities {
+    // Funzione per aggiornare gli oggetti di una scheda personaggio se 0/0
     static async updateActorItems(actorName) {
         let actor = game.actors.getName(actorName);
         if (!actor) {
@@ -9,7 +10,7 @@ export class CompendiumUtilities {
         }
 
         for (let item of actor.items) {
-            if (item.system.uses && item.system.uses.max === 0 && item.system.uses.spent === 0) {
+            if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
                 const updateData = {
                     "system.uses.max": "",
                     "system.uses.spent": 0,
@@ -40,6 +41,7 @@ export class CompendiumUtilities {
         ui.notifications.info(`${actor.name}: Oggetti aggiornati correttamente!`);
     }
 
+    // Funzione per aggiornare tutti gli oggetti in un compendio se 0/0
     static async updateCompendiumItems(compendiumName) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
@@ -54,7 +56,7 @@ export class CompendiumUtilities {
         const items = await pack.getDocuments();
 
         for (let item of items) {
-            if (item.system.uses && item.system.uses.max === 0 && item.system.uses.spent === 0) {
+            if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
                 const updateData = {
                     "system.uses.max": "",
                     "system.uses.spent": 0,
@@ -87,6 +89,7 @@ export class CompendiumUtilities {
 }
 
 export class SpellConcentrationFixer {
+    // Funzione per aggiornare la concentrazione delle spell di un attore
     static async updateActorSpells(actorName) {
         let actor = game.actors.getName(actorName);
         if (!actor) {
@@ -95,7 +98,8 @@ export class SpellConcentrationFixer {
         }
 
         for (let item of actor.items) {
-            if (item.type === "spell" && item.system.duration?.units === "hour") {
+            // Controlla se l'oggetto è un incantesimo e richiede concentrazione secondo i suoi dati
+            if (item.type === "spell" && item.system.duration?.units && item.system.components?.concentration) {
                 let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
 
                 if (!properties.includes("concentration")) {
@@ -118,6 +122,7 @@ export class SpellConcentrationFixer {
         ui.notifications.info(`${actor.name}: Spell aggiornate correttamente!`);
     }
 
+    // Funzione per aggiornare la concentrazione delle spell in un compendio
     static async updateCompendiumSpells(compendiumName) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
@@ -132,7 +137,8 @@ export class SpellConcentrationFixer {
         const items = await pack.getDocuments();
 
         for (let item of items) {
-            if (item.type === "spell" && item.system.duration?.units === "hour") {
+            // Controlla se l'oggetto è un incantesimo e richiede concentrazione secondo i suoi dati
+            if (item.type === "spell" && item.system.duration?.units && item.system.components?.concentration) {
                 let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
 
                 if (!properties.includes("concentration")) {

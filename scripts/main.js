@@ -86,8 +86,9 @@ class RebexFixesApp extends FormApplication {
         fixTypeSelect.on('change', updateFormVisibility);
 
         fixActorButton.on('click', async () => {
-            const actorName = actorSelect.val();
-             if (fixType === "actor") {
+            const fixType = fixTypeSelect.val();
+            if (fixType === "actor") {
+                const actorName = actorSelect.val();
                 await CompendiumUtilities.updateActorItems(actorName);
             } else if (fixType === "compendium") {
                 const compendiumName = compendiumSelect.val();

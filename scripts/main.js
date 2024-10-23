@@ -85,19 +85,7 @@ class RebexFixesApp extends FormApplication {
 
         fixTypeSelect.on('change', updateFormVisibility);
 
-        async function fix0_0() {
-            const fixType = fixTypeSelect.val();
-            if (fixType === "actor") {
-                const actorName = actorSelect.val();
-                await CompendiumUtilities.updateActorItems(actorName);
-            } else if (fixType === "compendium") {
-                const compendiumName = compendiumSelect.val();
-                await CompendiumUtilities.updateCompendiumItems(compendiumName);
-            }
-        }
-
         fixActorButton.on('click', async () => {
-<<<<<<< HEAD
             const actorName = actorSelect.val();
              if (fixType === "actor") {
                 await CompendiumUtilities.updateActorItems(actorName);
@@ -105,9 +93,6 @@ class RebexFixesApp extends FormApplication {
                 const compendiumName = compendiumSelect.val();
                 await CompendiumUtilities.updateCompendiumItems(compendiumName);
             }
-=======
-            await fix0_0();
->>>>>>> 3da831393245c1697ce28fd352908eb80fe963c2
         });
 
         fixConcentrationButton.on('click', async () => {

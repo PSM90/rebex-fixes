@@ -143,7 +143,7 @@ export class SpellConcentrationFixer {
 
     static async updateSpells(items) {
         for (let item of items) {
-            if (item.type === "spell" && item.system.duration?.units && ["minute", "hour", "day"].includes(item.system.duration.units) && !item.system.duration.concentration) {
+            if (item.type === "spell" && item.flags?.dnd5e?.migratedProperties?.includes("concentration") && !item.system.duration.concentration) {
                 let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
 
                 if (!properties.includes("concentration")) {
@@ -166,7 +166,7 @@ export class SpellConcentrationFixer {
     }
 
     static async updateSingleSpell(item) {
-        if (item.type === "spell" && item.system.duration?.units && ["minute", "hour", "day"].includes(item.system.duration.units) && !item.system.duration.concentration) {
+        if (item.type === "spell" && item.flags?.dnd5e?.migratedProperties?.includes("concentration") && !item.system.duration.concentration) {
             let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
 
             if (!properties.includes("concentration")) {

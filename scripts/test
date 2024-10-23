@@ -1,0 +1,103 @@
+// utilities.js
+
+export class CompendiumUtilities {
+    // Funzione per aggiornare gli oggetti di una scheda personaggio se 0/0
+    static async updateActorItems(actorName) {
+        let actor = game.actors.getName(actorName);
+        if (!actor) {
+            ui.notifications.error(`Personaggio "${actorName}" non trovato.`);
+            return;
+        }
+
+        await this.updateItems(actor.items);
+        ui.notifications.info(`${actor.name}: Oggetti aggiornati correttamente!`);
+    }
+
+    // Funzione per aggiornare tutti gli oggetti in un compendio se 0/0
+    static async updateCompendiumItems(compendiumName) {
+        const pack = game.packs.get(compendiumName);
+        if (!pack) {
+            ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
+            return;
+        }
+
+        if (pack.locked) {
+            await pack.configure({ locked: false });
+        }
+
+        const items = await pack.getDocuments();
+
+        for (let item of items) {
+            if (item.type === "character") {
+                // Aggiorna gli oggetti di una scheda personaggio nel compendio
+                await this.updateItems(item.items);
+            } else {
+                // Aggiorna un oggetto normale nel compendio
+                await this.updateSingleItem(item);
+            }
+        }
+        ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
+    }
+
+    // Funzione generica per aggiornare una lista di oggetti
+    static async updateItems(items) {
+        for (let item of items) {
+            if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
+                const updateData = {
+                    "system.uses.max": "",
+                    "system.uses.spent": 0,
+                    "system.activities": item.system.activities ? Object.keys(item.system.activities).reduce((acc, key) => {
+                        acc[key] = {
+                            ...item.system.activities[key],
+                            "consumption": {
+                                ...item.system.activities[key].consumption,
+                                "targets": [],
+                                "scaling": item.system.activities[key].consumption.scaling,
+                                "spellSlot": item.system.activities[key].consumption.spellSlot
+                            }
+                        };
+                        return acc;
+                    }, {}) : {}
+                };
+
+                console.log(`Aggiornamento item ${item.name}:`, updateData);
+                try {
+                    await item.update(updateData);
+                    console.log(`Item ${item.name} aggiornato con successo`);
+                } catch (error) {
+                    console.error(`Errore nell'aggiornamento di ${item.name}:`, error);
+                }
+            }
+        }
+    }
+
+    // Funzione per aggiornare un singolo oggetto
+    static async updateSingleItem(item) {
+        if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
+            const updateData = {
+                "system.uses.max": "",
+                "system.uses.spent": 0,
+                "system.activities": item.system.activities ? Object.keys(item.system.activities).reduce((acc, key) => {
+                    acc[key] = {
+                        ...item.system.activities[key],
+                        "consumption": {
+                            ...item.system.activities[key].consumption,
+                            "targets": [],
+                            "scaling": item.system.activities[key].consumption.scaling,
+                            "spellSlot": item.system.activities[key].consumption.spellSlot
+                        }
+                    };
+                    return acc;
+                }, {}) : {}
+            };
+
+            console.log(`Aggiornamento item compendio ${item.name}:`, updateData);
+            try {
+                await item.update(updateData);
+                console.log(`Item compendio ${item.name} aggiornato con successo`);
+            } catch (error) {
+                console.error(`Errore nell'aggiornamento di ${item.name}:`, error);
+            }
+        }
+    }
+}

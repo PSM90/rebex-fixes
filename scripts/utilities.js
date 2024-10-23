@@ -29,10 +29,8 @@ export class CompendiumUtilities {
 
         for (let item of items) {
             if (item.type === "character") {
-                // Aggiorna gli oggetti di una scheda personaggio nel compendio
                 await this.updateItems(item.items);
             } else {
-                // Aggiorna un oggetto normale nel compendio
                 await this.updateSingleItem(item);
             }
         }
@@ -42,59 +40,39 @@ export class CompendiumUtilities {
     // Funzione generica per aggiornare una lista di oggetti
     static async updateItems(items) {
         for (let item of items) {
-            if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
-                const updateData = {
-                    "system.uses.max": "",
-                    "system.uses.spent": 0,
-                    "system.activities": item.system.activities ? Object.keys(item.system.activities).reduce((acc, key) => {
-                        acc[key] = {
-                            ...item.system.activities[key],
-                            "consumption": {
-                                ...item.system.activities[key].consumption,
-                                "targets": [],
-                                "scaling": item.system.activities[key].consumption.scaling,
-                                "spellSlot": item.system.activities[key].consumption.spellSlot
-                            }
-                        };
-                        return acc;
-                    }, {}) : {}
-                };
-
-                console.log(`Aggiornamento item ${item.name}:`, updateData);
-                try {
-                    await item.update(updateData);
-                    console.log(`Item ${item.name} aggiornato con successo`);
-                } catch (error) {
-                    console.error(`Errore nell'aggiornamento di ${item.name}:`, error);
-                }
-            }
+            await this.updateSingleItem(item);
         }
     }
 
     // Funzione per aggiornare un singolo oggetto
     static async updateSingleItem(item) {
         if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
-            const updateData = {
-                    "system.uses.max": "",
-                    "system.uses.spent": 0,
-                    "system.activities": item.system.activities ? Object.keys(item.system.activities).reduce((acc, key) => {
-                        acc[key] = {
-                            ...item.system.activities[key],
-                            "consumption": {
-                                ...item.system.activities[key].consumption,
-                                "targets": [],
-                                "scaling": item.system.activities[key].consumption.scaling,
-                                "spellSlot": item.system.activities[key].consumption.spellSlot
-                            }
-                        };
-                        return acc;
-                    }, {}) : {}
+            const updatedActivities = item.system.activities ? Object.entries(item.system.activities).reduce((acc, [key, activity]) => {
+                acc[key] = {
+                    ...activity,
+                    "consumption": {
+                        ...activity.consumption,
+                        "targets": [],
+                        "scaling": activity.consumption.scaling || {
+                            "allowed": false,
+                            "max": ""
+                        },
+                        "spellSlot": activity.consumption.spellSlot || true
+                    }
                 };
+                return acc;
+            }, {}) : {};
 
-            console.log(`Aggiornamento item compendio ${item.name}:`, updateData);
+            const updateData = {
+                "system.uses.max": "",
+                "system.uses.spent": 0,
+                "system.activities": updatedActivities
+            };
+
+            console.log(`Aggiornamento item ${item.name}:`, updateData);
             try {
                 await item.update(updateData);
-                console.log(`Item compendio ${item.name} aggiornato con successo`);
+                console.log(`Item ${item.name} aggiornato con successo`);
             } catch (error) {
                 console.error(`Errore nell'aggiornamento di ${item.name}:`, error);
             }
@@ -139,25 +117,7 @@ export class SpellConcentrationFixer {
 
     static async updateSpells(items) {
         for (let item of items) {
-            if (item.type === "spell" && item.flags?.dnd5e?.migratedProperties?.includes("concentration") && !item.system.duration.concentration) {
-                let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
-
-                if (!properties.includes("concentration")) {
-                    const updateData = {
-                        "flags.midiProperties.concentration": true,
-                        "system.duration.concentration": true,
-                        "system.properties": [...properties, "concentration"]
-                    };
-
-                    console.log(`Aggiornamento concentrazione spell ${item.name}:`, updateData);
-                    try {
-                        await item.update(updateData);
-                        console.log(`Concentrazione spell ${item.name} aggiornata con successo`);
-                    } catch (error) {
-                        console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
-                    }
-                }
-            }
+            await this.updateSingleSpell(item);
         }
     }
 
@@ -172,10 +132,10 @@ export class SpellConcentrationFixer {
                     "system.properties": [...properties, "concentration"]
                 };
 
-                console.log(`Aggiornamento concentrazione spell compendio ${item.name}:`, updateData);
+                console.log(`Aggiornamento concentrazione spell ${item.name}:`, updateData);
                 try {
                     await item.update(updateData);
-                    console.log(`Concentrazione spell compendio ${item.name} aggiornata con successo`);
+                    console.log(`Concentrazione spell ${item.name} aggiornata con successo`);
                 } catch (error) {
                     console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
                 }

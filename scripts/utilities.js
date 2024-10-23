@@ -1,3 +1,5 @@
+// utilities.js
+
 export class CompendiumUtilities {
     // Funzione per aggiornare gli oggetti di una scheda personaggio se 0/0
     static async updateActorItems(actorName) {
@@ -27,10 +29,8 @@ export class CompendiumUtilities {
 
         for (let item of items) {
             if (item.type === "character") {
-                // Aggiorna gli oggetti di una scheda personaggio nel compendio
                 await this.updateItems(item.items);
             } else {
-                // Aggiorna un oggetto normale nel compendio
                 await this.updateSingleItem(item);
             }
         }
@@ -40,56 +40,42 @@ export class CompendiumUtilities {
     // Funzione generica per aggiornare una lista di oggetti
     static async updateItems(items) {
         for (let item of items) {
-            if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
-                await this.updateItemData(item);
-                await this.updateItemActivities(item);
-            }
+            await this.updateSingleItem(item);
         }
     }
 
     // Funzione per aggiornare un singolo oggetto
     static async updateSingleItem(item) {
         if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
-            await this.updateItemData(item);
-            await this.updateItemActivities(item);
-        }
-    }
+            const updateData = {
+                "system.uses.max": "",
+                "system.uses.spent": 0,
+                "system.activities": item.system.activities ? {
+                    ...item.system.activities,
+                    ...Object.keys(item.system.activities).reduce((acc, key) => {
+                        acc[key] = {
+                            ...item.system.activities[key],
+                            "consumption": {
+                                "targets": [],
+                                "scaling": {
+                                    ...item.system.activities[key].consumption.scaling,
+                                    "allowed": item.system.activities[key].consumption.scaling.allowed,
+                                    "max": item.system.activities[key].consumption.scaling.max || ""
+                                },
+                                "spellSlot": item.system.activities[key].consumption.spellSlot
+                            }
+                        };
+                        return acc;
+                    }, {})
+                } : {}
+            };
 
-    // Funzione per aggiornare i dati generali di un oggetto
-    static async updateItemData(item) {
-        const updateData = {
-            "system.uses.max": "",
-            "system.uses.spent": 0
-        };
-
-        try {
-            await item.update(updateData);
-            console.log(`Dati dell'oggetto ${item.name} aggiornati con successo`);
-        } catch (error) {
-            console.error(`Errore nell'aggiornamento dei dati di ${item.name}:`, error);
-        }
-    }
-
-    // Funzione per aggiornare solo le activities di un oggetto
-    static async updateItemActivities(item) {
-        const activities = item.system.activities ? foundry.utils.deepClone(item.system.activities) : {};
-
-        for (let activityKey in activities) {
-            let activity = activities[activityKey];
-
-            // Mantieni gli altri dati intatti, svuota solo i targets
-            if (activity.consumption) {
-                activity.consumption.targets = [];
-            }
-
+            console.log(`Aggiornamento item ${item.name}:`, updateData);
             try {
-                const updateData = {
-                    [`system.activities.${activityKey}`]: activity
-                };
                 await item.update(updateData);
-                console.log(`Activities dell'oggetto ${item.name} aggiornate con successo`);
+                console.log(`Item ${item.name} aggiornato con successo`);
             } catch (error) {
-                console.error(`Errore nell'aggiornamento delle activities di ${item.name}:`, error);
+                console.error(`Errore nell'aggiornamento di ${item.name}:`, error);
             }
         }
     }
@@ -132,29 +118,29 @@ export class SpellConcentrationFixer {
 
     static async updateSpells(items) {
         for (let item of items) {
-            if (item.type === "spell" && item.flags?.dnd5e?.migratedProperties?.includes("concentration") && !item.system.duration.concentration) {
-                await this.updateSpellData(item);
-            }
+            await this.updateSingleSpell(item);
         }
     }
 
     static async updateSingleSpell(item) {
         if (item.type === "spell" && item.flags?.dnd5e?.migratedProperties?.includes("concentration") && !item.system.duration.concentration) {
-            await this.updateSpellData(item);
-        }
-    }
+            let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
 
-    static async updateSpellData(item) {
-        const updateData = {
-            "flags.midiProperties.concentration": true,
-            "system.duration.concentration": true
-        };
+            if (!properties.includes("concentration")) {
+                const updateData = {
+                    "flags.midiProperties.concentration": true,
+                    "system.duration.concentration": true,
+                    "system.properties": [...properties, "concentration"]
+                };
 
-        try {
-            await item.update(updateData);
-            console.log(`Concentrazione dell'incantesimo ${item.name} aggiornata con successo`);
-        } catch (error) {
-            console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
+                console.log(`Aggiornamento concentrazione spell ${item.name}:`, updateData);
+                try {
+                    await item.update(updateData);
+                    console.log(`Concentrazione spell ${item.name} aggiornata con successo`);
+                } catch (error) {
+                    console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
+                }
+            }
         }
     }
 }

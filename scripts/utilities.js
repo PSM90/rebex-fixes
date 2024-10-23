@@ -47,30 +47,36 @@ export class CompendiumUtilities {
     // Funzione per aggiornare un singolo oggetto
     static async updateSingleItem(item) {
         if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
+            const activities = item.system.activities ? Object.fromEntries(
+                item.system.activities.entries()
+            ) : {};
+
+            // Aggiorna i dati delle attività mantenendo tutto invariato tranne i campi specificati
+            const updatedActivities = Object.fromEntries(
+                Object.entries(activities).map(([key, activity]) => {
+                    return [key, {
+                        ...activity,
+                        "consumption": {
+                            ...activity.consumption,
+                            "targets": [],
+                            "scaling": {
+                                ...activity.consumption.scaling,
+                                "allowed": activity.consumption.scaling.allowed,
+                                "max": activity.consumption.scaling.max
+                            },
+                            "spellSlot": activity.consumption.spellSlot
+                        }
+                    }];
+                })
+            );
+
+            // Crea l'oggetto updateData utilizzando i dati aggiornati
             const updateData = {
                 "system.uses.max": "",
                 "system.uses.spent": 0,
-                "system.activities": item.system.activities ? {
-                    ...item.system.activities,
-                    ...Object.keys(item.system.activities).reduce((acc, key) => {
-                        acc[key] = {
-                            ...item.system.activities[key],
-                            "consumption": {
-                                "targets": [],
-                                "scaling": {
-                                    ...item.system.activities[key].consumption.scaling,
-                                    "allowed": item.system.activities[key].consumption.scaling.allowed,
-                                    "max": item.system.activities[key].consumption.scaling.max || ""
-                                },
-                                "spellSlot": item.system.activities[key].consumption.spellSlot
-                            }
-                        };
-                        return acc;
-                    }, {})
-                } : {}
+                "system.activities": updatedActivities
             };
 
-            console.log(`Aggiornamento item ${item.name}:`, updateData);
             try {
                 await item.update(updateData);
                 console.log(`Item ${item.name} aggiornato con successo`);

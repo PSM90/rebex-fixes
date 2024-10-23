@@ -1,5 +1,9 @@
 // utilities.js
 
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export class CompendiumUtilities {
     // Funzione per aggiornare gli oggetti di una scheda personaggio se 0/0
     static async updateActorItems(actorName) {
@@ -9,6 +13,7 @@ export class CompendiumUtilities {
             return;
         }
 
+        console.log(`Inizio aggiornamento oggetti per l'attore: ${actorName}`);
         await this.updateItems(actor.items);
         ui.notifications.info(`${actor.name}: Oggetti aggiornati correttamente!`);
     }
@@ -25,31 +30,38 @@ export class CompendiumUtilities {
             await pack.configure({ locked: false });
         }
 
+        console.log(`Inizio aggiornamento oggetti nel compendio: ${compendiumName}`);
         const items = await pack.getDocuments();
 
-        for (let item of items) {
+        for (let i = 0; i < items.length; i++) {
+            let item = items[i];
+            console.log(`Aggiornamento oggetto ${i + 1}/${items.length}: ${item.name}`);
+
             if (item.type === "character") {
                 await this.updateItems(item.items);
             } else {
                 await this.updateSingleItem(item);
             }
+
+            await delay(100); // Ritardo di 100 ms tra gli aggiornamenti
         }
         ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
     }
 
     // Funzione generica per aggiornare una lista di oggetti
     static async updateItems(items) {
-        for (let item of items) {
+        for (let i = 0; i < items.length; i++) {
+            let item = items[i];
+            console.log(`Aggiornamento item ${i + 1}/${items.length}: ${item.name}`);
             await this.updateSingleItem(item);
+            await delay(50); // Ritardo di 50 ms tra gli aggiornamenti degli oggetti
         }
     }
 
     // Funzione per aggiornare un singolo oggetto
     static async updateSingleItem(item) {
         if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
-            const activities = item.system.activities ? Object.fromEntries(
-                item.system.activities.entries()
-            ) : {};
+            const activities = item.system.activities ? Object.fromEntries(item.system.activities.entries()) : {};
 
             // Aggiorna i dati delle attività mantenendo tutto invariato tranne i campi specificati
             const updatedActivities = Object.fromEntries(
@@ -95,6 +107,7 @@ export class SpellConcentrationFixer {
             return;
         }
 
+        console.log(`Inizio aggiornamento incantesimi per l'attore: ${actorName}`);
         await this.updateSpells(actor.items);
         ui.notifications.info(`${actor.name}: Spell aggiornate correttamente!`);
     }
@@ -110,21 +123,30 @@ export class SpellConcentrationFixer {
             await pack.configure({ locked: false });
         }
 
+        console.log(`Inizio aggiornamento incantesimi nel compendio: ${compendiumName}`);
         const items = await pack.getDocuments();
 
-        for (let item of items) {
+        for (let i = 0; i < items.length; i++) {
+            let item = items[i];
+            console.log(`Aggiornamento incantesimo ${i + 1}/${items.length}: ${item.name}`);
+
             if (item.type === "character") {
                 await this.updateSpells(item.items);
             } else if (item.type === "spell") {
                 await this.updateSingleSpell(item);
             }
+
+            await delay(100); // Ritardo di 100 ms tra gli aggiornamenti
         }
         ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
     }
 
     static async updateSpells(items) {
-        for (let item of items) {
+        for (let i = 0; i < items.length; i++) {
+            let item = items[i];
+            console.log(`Aggiornamento spell ${i + 1}/${items.length}: ${item.name}`);
             await this.updateSingleSpell(item);
+            await delay(50); // Ritardo di 50 ms tra gli aggiornamenti degli incantesimi
         }
     }
 

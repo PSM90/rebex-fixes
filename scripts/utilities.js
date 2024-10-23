@@ -46,20 +46,18 @@ export class CompendiumUtilities {
                 const updateData = {
                     "system.uses.max": "",
                     "system.uses.spent": 0,
-                    "system.activities": item.system.activities ? {
-                        ...item.system.activities,
-                        "dnd5eactivity000": {
-                            ...item.system.activities.dnd5eactivity000,
+                    "system.activities": item.system.activities ? Object.keys(item.system.activities).reduce((acc, key) => {
+                        acc[key] = {
+                            ...item.system.activities[key],
                             "consumption": {
+                                ...item.system.activities[key].consumption,
                                 "targets": [],
-                                "scaling": {
-                                    "allowed": false,
-                                    "max": ""
-                                },
-                                "spellSlot": true
+                                "scaling": item.system.activities[key].consumption.scaling,
+                                "spellSlot": item.system.activities[key].consumption.spellSlot
                             }
-                        }
-                    } : {}
+                        };
+                        return acc;
+                    }, {}) : {}
                 };
 
                 console.log(`Aggiornamento item ${item.name}:`, updateData);
@@ -77,23 +75,21 @@ export class CompendiumUtilities {
     static async updateSingleItem(item) {
         if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
             const updateData = {
-                "system.uses.max": "",
-                "system.uses.spent": 0,
-                "system.activities": item.system.activities ? {
-                    ...item.system.activities,
-                    "dnd5eactivity000": {
-                        ...item.system.activities.dnd5eactivity000,
-                        "consumption": {
-                            "targets": [],
-                            "scaling": {
-                                "allowed": false,
-                                "max": ""
-                            },
-                            "spellSlot": true
-                        }
-                    }
-                } : {}
-            };
+                    "system.uses.max": "",
+                    "system.uses.spent": 0,
+                    "system.activities": item.system.activities ? Object.keys(item.system.activities).reduce((acc, key) => {
+                        acc[key] = {
+                            ...item.system.activities[key],
+                            "consumption": {
+                                ...item.system.activities[key].consumption,
+                                "targets": [],
+                                "scaling": item.system.activities[key].consumption.scaling,
+                                "spellSlot": item.system.activities[key].consumption.spellSlot
+                            }
+                        };
+                        return acc;
+                    }, {}) : {}
+                };
 
             console.log(`Aggiornamento item compendio ${item.name}:`, updateData);
             try {

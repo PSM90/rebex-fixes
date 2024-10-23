@@ -40,54 +40,24 @@ export class CompendiumUtilities {
     // Funzione generica per aggiornare una lista di oggetti
     static async updateItems(items) {
         for (let item of items) {
-            if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
-                await this.updateItemData(item);
-                await this.updateItemActivities(item);
-            }
+            await this.updateSingleItem(item);
         }
     }
 
     // Funzione per aggiornare un singolo oggetto
     static async updateSingleItem(item) {
         if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
-            await this.updateItemData(item);
-            await this.updateItemActivities(item);
-        }
-    }
+            const updateData = {
+                "system.uses.max": "",
+                "system.uses.spent": 0
+            };
 
-    // Funzione per aggiornare i dati generali di un oggetto
-    static async updateItemData(item) {
-        const updateData = {
-            "system.uses.max": "",
-            "system.uses.spent": 0
-        };
-
-        try {
-            await item.update(updateData);
-            console.log(`Dati dell'oggetto ${item.name} aggiornati con successo`);
-        } catch (error) {
-            console.error(`Errore nell'aggiornamento dei dati di ${item.name}:`, error);
-        }
-    }
-
-    // Funzione per aggiornare solo le activities di un oggetto
-    static async updateItemActivities(item) {
-        const activities = item.system.activities || {};
-
-        for (let activityKey in activities) {
-            let activity = activities[activityKey];
-
-            // Mantieni gli altri dati intatti, svuota solo i targets
-            activity.consumption.targets = [];
-
+            console.log(`Aggiornamento item ${item.name}:`, updateData);
             try {
-                const updateData = {
-                    [`system.activities.${activityKey}`]: activity
-                };
                 await item.update(updateData);
-                console.log(`Activities dell'oggetto ${item.name} aggiornate con successo`);
+                console.log(`Item ${item.name} aggiornato con successo`);
             } catch (error) {
-                console.error(`Errore nell'aggiornamento delle activities di ${item.name}:`, error);
+                console.error(`Errore nell'aggiornamento di ${item.name}:`, error);
             }
         }
     }
@@ -122,7 +92,7 @@ export class SpellConcentrationFixer {
             if (item.type === "character") {
                 await this.updateSpells(item.items);
             } else if (item.type === "spell") {
-                await this.updateSingleSpell(item);
+                await this.updateSpellWithEmbeddedDocs(item);
             }
         }
         ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
@@ -130,29 +100,28 @@ export class SpellConcentrationFixer {
 
     static async updateSpells(items) {
         for (let item of items) {
-            if (item.type === "spell" && item.flags?.dnd5e?.migratedProperties?.includes("concentration") && !item.system.duration.concentration) {
-                await this.updateSpellData(item);
-            }
+            await this.updateSpellWithEmbeddedDocs(item);
         }
     }
 
-    static async updateSingleSpell(item) {
+    static async updateSpellWithEmbeddedDocs(item) {
         if (item.type === "spell" && item.flags?.dnd5e?.migratedProperties?.includes("concentration") && !item.system.duration.concentration) {
-            await this.updateSpellData(item);
-        }
-    }
+            try {
+                // Ottieni il documento incorporato per le activities
+                const embeddedActivities = item.system.activities ? { ...item.system.activities } : {};
 
-    static async updateSpellData(item) {
-        const updateData = {
-            "flags.midiProperties.concentration": true,
-            "system.duration.concentration": true
-        };
+                // Prepara i dati per l'aggiornamento
+                const updateData = {
+                    "system.duration.concentration": true,
+                    "system.activities": embeddedActivities
+                };
 
-        try {
-            await item.update(updateData);
-            console.log(`Concentrazione dell'incantesimo ${item.name} aggiornata con successo`);
-        } catch (error) {
-            console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
+                // Aggiorna l'oggetto spell per preservare le activities
+                await item.update(updateData);
+                console.log(`Concentrazione spell ${item.name} aggiornata con successo`);
+            } catch (error) {
+                console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
+            }
         }
     }
 }

@@ -85,7 +85,12 @@ class RebexFixesApp extends FormApplication {
 
         fixActorButton.on('click', async () => {
             const actorName = actorSelect.val();
-            await CompendiumUtilities.updateActorItems(actorName);
+             if (fixType === "actor") {
+                await CompendiumUtilities.updateActorItems(actorName);
+            } else if (fixType === "compendium") {
+                const compendiumName = compendiumSelect.val();
+                await CompendiumUtilities.updateCompendiumItems(compendiumName);
+            }
         });
 
         fixConcentrationButton.on('click', async () => {

@@ -47,26 +47,27 @@ export class CompendiumUtilities {
     // Funzione per aggiornare un singolo oggetto
     static async updateSingleItem(item) {
         if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
-            const updatedActivities = item.system.activities ? Object.entries(item.system.activities).reduce((acc, [key, activity]) => {
-                acc[key] = {
-                    ...activity,
-                    "consumption": {
-                        ...activity.consumption,
-                        "targets": [],
-                        "scaling": activity.consumption.scaling || {
-                            "allowed": false,
-                            "max": ""
-                        },
-                        "spellSlot": activity.consumption.spellSlot || true
-                    }
-                };
-                return acc;
-            }, {}) : {};
-
             const updateData = {
                 "system.uses.max": "",
                 "system.uses.spent": 0,
-                "system.activities": updatedActivities
+                "system.activities": item.system.activities ? {
+                    ...item.system.activities,
+                    ...Object.keys(item.system.activities).reduce((acc, key) => {
+                        acc[key] = {
+                            ...item.system.activities[key],
+                            "consumption": {
+                                "targets": [],
+                                "scaling": {
+                                    ...item.system.activities[key].consumption.scaling,
+                                    "allowed": item.system.activities[key].consumption.scaling.allowed,
+                                    "max": item.system.activities[key].consumption.scaling.max || ""
+                                },
+                                "spellSlot": item.system.activities[key].consumption.spellSlot
+                            }
+                        };
+                        return acc;
+                    }, {})
+                } : {}
             };
 
             console.log(`Aggiornamento item ${item.name}:`, updateData);

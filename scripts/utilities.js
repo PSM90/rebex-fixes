@@ -48,27 +48,21 @@ export class CompendiumUtilities {
     static async updateSingleItem(item) {
         if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
             const updateData = {
-                "system.uses.max": "",
-                "system.uses.spent": 0,
-                "system.activities": item.system.activities ? {
-                    ...item.system.activities,
-                    ...Object.keys(item.system.activities).reduce((acc, key) => {
+               "system.uses.max": "",
+                    "system.uses.spent": 0,
+                    "system.activities": item.system.activities ? Object.keys(item.system.activities).reduce((acc, key) => {
                         acc[key] = {
                             ...item.system.activities[key],
                             "consumption": {
+                                ...item.system.activities[key].consumption,
                                 "targets": [],
-                                "scaling": {
-                                    ...item.system.activities[key].consumption.scaling,
-                                    "allowed": item.system.activities[key].consumption.scaling.allowed,
-                                    "max": item.system.activities[key].consumption.scaling.max || ""
-                                },
+                                "scaling": item.system.activities[key].consumption.scaling,
                                 "spellSlot": item.system.activities[key].consumption.spellSlot
                             }
                         };
                         return acc;
-                    }, {})
-                } : {}
-            };
+                    }, {}) : {}
+                };
 
             console.log(`Aggiornamento item ${item.name}:`, updateData);
             try {

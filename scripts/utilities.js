@@ -1,5 +1,7 @@
 // utilities.js
 
+import { mergeObject } from 'foundry.utils';
+
 export class CompendiumUtilities {
     // Funzione per aggiornare gli oggetti di una scheda personaggio se 0/0
     static async updateActorItems(actorName) {

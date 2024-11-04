@@ -38,7 +38,7 @@ class RebexFixesApp extends FormApplication {
     }
 
     static get defaultOptions() {
-        return foundry.utils.mergeObject(super.defaultOptions, {
+        return mergeObject(super.defaultOptions, {
             id: "rebex-fixes-app",
             title: "Rebex Fixes",
             template: "modules/rebex-fixes/templates/rebex-fixes.html",

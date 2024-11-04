@@ -21,29 +21,103 @@ export class CompendiumUtilities {
             return;
         }
 
-        // Sblocco temporaneo del compendio
-        const wasLocked = pack.locked;
-        if (wasLocked) {
+        if (pack.locked) {
             await pack.configure({ locked: false });
         }
 
-        await pack.getIndex();
-        const documents = await pack.getDocuments();
+        const items = await pack.getDocuments();
 
-        for (let doc of documents) {
-            if (doc.type === "spell") {
-                await this.updateSpellWithActivities(doc);
+        for (let item of items) {
+            if (item.type === "character") {
+                // Aggiorna gli oggetti di una scheda personaggio nel compendio
+                await this.updateItems(item.items);
             } else {
-                await this.updateSingleItem(doc);
+                // Aggiorna un oggetto normale nel compendio
+                await this.updateSingleItem(item);
             }
         }
+        ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
+    }
 
-        // Riblocca il compendio se era bloccato
-        if (wasLocked) {
-            await pack.configure({ locked: true });
+    // Funzione per fixare un compendio di spell seguendo l'azione manuale specificata
+    static async fixSpellCompendium(compendiumName) {
+        const pack = game.packs.get(compendiumName);
+        if (!pack) {
+            ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
+            return;
         }
 
-        ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
+        const wasLocked = pack.locked;
+        if (wasLocked) await pack.configure({ locked: false });
+
+        const documents = await pack.getDocuments();
+
+        for (let spell of documents) {
+            await this.applyManualSpellFix(spell);
+        }
+
+        if (wasLocked) await pack.configure({ locked: true });
+        ui.notifications.info(`Compendio di incantesimi "${compendiumName}" aggiornato correttamente!`);
+    }
+
+    // Funzione per applicare manualmente il fix a ciascun incantesimo
+    static async applyManualSpellFix(spell) {
+        return new Promise((resolve) => {
+            const sheet = spell.sheet;
+            sheet.render(true);
+
+            Hooks.once("renderItemSheet5e", async (app, html) => {
+                const $html = $(html);
+
+                // Step 2: Apri la scheda DETAILS e applica le fix per system.uses.max e system.uses.spent
+                $html.find('a[data-tab="details"]').click();
+
+                // Check and fix for 0/0 on uses
+                const usesMax = $html.find('input[name="system.uses.max"]').val();
+                const usesSpent = $html.find('input[name="system.uses.spent"]').val();
+
+                if (usesMax === "0" && usesSpent === "0") {
+                    $html.find('input[name="system.uses.max"]').val('');
+                }
+
+                // Fix concentrazione
+                if (
+                    spell.type === "spell" &&
+                    spell.flags?.dnd5e?.migratedProperties?.includes("concentration") &&
+                    !spell.system.duration.concentration
+                ) {
+                    $html.find('[name="system.properties.concentration"]').prop('checked', true);
+                }
+
+                // Step 3: Apri la scheda ACTIVITIES
+                $html.find('a[data-tab="activities"]').click();
+
+                // Step 4-8: Per ogni activity, applica la fix
+                const activityCards = $html.find('.activity.card');
+                for (let activityCard of activityCards) {
+                    const $activity = $(activityCard);
+
+                    // Step 5: Apri la scheda ACTIVATION
+                    $activity.find('a[data-tab="activation"][data-action="tab"]').click();
+
+                    // Step 6: Apri la scheda CONSUMPTION
+                    $activity.find('a[data-group="activation"][data-tab="consumption"]').click();
+
+                    // Step 7: Controllo e rimozione itemUses se necessario
+                    const consumptionType = $activity.find('select[name="system.consumption.targets.0.type"]').val();
+                    const consumptionValue = $activity.find('input[name="system.consumption.targets.0.value"]').val();
+
+                    if (consumptionType === "itemUses" && consumptionValue === "0") {
+                        $activity.find('button[data-action="deleteConsumption"]').trigger('click');
+                    }
+                }
+
+                // Step 9: Salva e chiude la scheda della spell
+                await app.submit();
+                sheet.close();
+                resolve();
+            });
+        });
     }
 
     // Funzione generica per aggiornare una lista di oggetti
@@ -53,6 +127,20 @@ export class CompendiumUtilities {
                 const updateData = {
                     "system.uses.max": "",
                     "system.uses.spent": 0,
+                    "system.activities": item.system.activities ? {
+                        ...item.system.activities,
+                        "dnd5eactivity000": {
+                            ...item.system.activities.dnd5eactivity000,
+                            "consumption": {
+                                "targets": [],
+                                "scaling": {
+                                    "allowed": false,
+                                    "max": ""
+                                },
+                                "spellSlot": true
+                            }
+                        }
+                    } : {}
                 };
 
                 console.log(`Aggiornamento item ${item.name}:`, updateData);
@@ -71,7 +159,21 @@ export class CompendiumUtilities {
         if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
             const updateData = {
                 "system.uses.max": "",
-                "system.uses.spent": 0
+                "system.uses.spent": 0,
+                "system.activities": item.system.activities ? {
+                    ...item.system.activities,
+                    "dnd5eactivity000": {
+                        ...item.system.activities.dnd5eactivity000,
+                        "consumption": {
+                            "targets": [],
+                            "scaling": {
+                                "allowed": false,
+                                "max": ""
+                            },
+                            "spellSlot": true
+                        }
+                    }
+                } : {}
             };
 
             console.log(`Aggiornamento item compendio ${item.name}:`, updateData);
@@ -80,28 +182,6 @@ export class CompendiumUtilities {
                 console.log(`Item compendio ${item.name} aggiornato con successo`);
             } catch (error) {
                 console.error(`Errore nell'aggiornamento di ${item.name}:`, error);
-            }
-        }
-    }
-
-    // Funzione per aggiornare una spell mantenendo intatte le activities
-    static async updateSpellWithActivities(spell) {
-        // Verifica se è necessario l'aggiornamento
-        if (spell.system.uses && (spell.system.uses.max === 0 || spell.system.uses.max === "") && spell.system.uses.spent === 0) {
-            // Clona le activities senza usare toObject() per evitare problemi di perdita di dati
-            const currentActivities = duplicate(spell.system.activities);
-
-            // Crea i dati di aggiornamento necessari, includendo sempre le activities
-            const updateData = foundry.utils.mergeObject({
-                "system.uses.max": "",
-                "system.uses.spent": 0
-            }, { "system.activities": currentActivities }, { overwrite: true, inplace: false });
-
-            try {
-                await spell.update(updateData, { noHook: true });
-                console.log(`Spell ${spell.name} aggiornata con successo`);
-            } catch (error) {
-                console.error(`Errore nell'aggiornamento della spell ${spell.name}:`, error);
             }
         }
     }
@@ -126,26 +206,19 @@ export class SpellConcentrationFixer {
             return;
         }
 
-        // Sblocco temporaneo del compendio
-        const wasLocked = pack.locked;
-        if (wasLocked) {
+        if (pack.locked) {
             await pack.configure({ locked: false });
         }
 
-        await pack.getIndex();
-        const documents = await pack.getDocuments();
+        const items = await pack.getDocuments();
 
-        for (let doc of documents) {
-            if (doc.type === "spell") {
-                await this.updateSingleSpell(doc);
+        for (let item of items) {
+            if (item.type === "character") {
+                await this.updateSpells(item.items);
+            } else if (item.type === "spell") {
+                await this.updateSingleSpell(item);
             }
         }
-
-        // Riblocca il compendio se era bloccato
-        if (wasLocked) {
-            await pack.configure({ locked: true });
-        }
-
         ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
     }
 
@@ -186,7 +259,7 @@ export class SpellConcentrationFixer {
 
                 console.log(`Aggiornamento concentrazione spell compendio ${item.name}:`, updateData);
                 try {
-                    await item.update(updateData, { noHook: true });
+                    await item.update(updateData);
                     console.log(`Concentrazione spell compendio ${item.name} aggiornata con successo`);
                 } catch (error) {
                     console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);

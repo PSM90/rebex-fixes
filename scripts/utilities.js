@@ -62,6 +62,8 @@ export class CompendiumUtilities {
 
     // Funzione per applicare manualmente il fix a ciascun incantesimo
     static async applyManualSpellFix(spell) {
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
         return new Promise((resolve) => {
             const sheet = spell.sheet;
             sheet.render(true);
@@ -71,6 +73,8 @@ export class CompendiumUtilities {
 
                 // Step 2: Apri la scheda DETAILS e applica le fix per system.uses.max e system.uses.spent
                 $html.find('a[data-tab="details"]').click();
+                await delay(2000);
+                console.log("Step 2: Aperta la scheda DETAILS.");
 
                 // Check and fix for 0/0 on uses
                 const usesMax = $html.find('input[name="system.uses.max"]').val();
@@ -79,6 +83,8 @@ export class CompendiumUtilities {
                 if (usesMax === "0" && usesSpent === "0") {
                     $html.find('input[name="system.uses.max"]').val('');
                 }
+                await delay(2000);
+                console.log("Step 2b: Applicata fix su system.uses.max e system.uses.spent.");
 
                 // Fix concentrazione
                 if (
@@ -88,9 +94,13 @@ export class CompendiumUtilities {
                 ) {
                     $html.find('[name="system.properties.concentration"]').prop('checked', true);
                 }
+                await delay(2000);
+                console.log("Step 2c: Applicata fix di concentrazione.");
 
                 // Step 3: Apri la scheda ACTIVITIES
                 $html.find('a[data-tab="activities"]').click();
+                await delay(2000);
+                console.log("Step 3: Aperta la scheda ACTIVITIES.");
 
                 // Step 4-8: Per ogni activity, applica la fix
                 const activityCards = $html.find('.activity.card');
@@ -99,9 +109,13 @@ export class CompendiumUtilities {
 
                     // Step 5: Apri la scheda ACTIVATION
                     $activity.find('a[data-tab="activation"][data-action="tab"]').click();
+                    await delay(2000);
+                    console.log("Step 5: Aperta la scheda ACTIVATION per l'activity.");
 
                     // Step 6: Apri la scheda CONSUMPTION
                     $activity.find('a[data-group="activation"][data-tab="consumption"]').click();
+                    await delay(2000);
+                    console.log("Step 6: Aperta la scheda CONSUMPTION per l'activity.");
 
                     // Step 7: Controllo e rimozione itemUses se necessario
                     const consumptionType = $activity.find('select[name="system.consumption.targets.0.type"]').val();
@@ -109,12 +123,17 @@ export class CompendiumUtilities {
 
                     if (consumptionType === "itemUses" && consumptionValue === "0") {
                         $activity.find('button[data-action="deleteConsumption"]').trigger('click');
+                        await delay(2000);
+                        console.log("Step 7: Rimosso itemUses dall'activity.");
                     }
                 }
 
                 // Step 9: Salva e chiude la scheda della spell
                 await app.submit();
-                sheet.close();
+                $html.find('.header-button.control.close').trigger('click');
+                await delay(2000);
+                console.log("Step 9: Salvata e chiusa la scheda della spell.");
+
                 resolve();
             });
         });

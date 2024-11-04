@@ -77,18 +77,18 @@ export class CompendiumUtilities {
         }
     }
 
-    // Funzione per aggiornare una spell con le activities senza cancellarle
+    // Funzione per aggiornare una spell mantenendo intatte le activities
     static async updateSpellWithActivities(spell) {
+        // Verifica se è necessario l'aggiornamento
         if (spell.system.uses && (spell.system.uses.max === 0 || spell.system.uses.max === "") && spell.system.uses.spent === 0) {
-            // Estrai le activities in una variabile separata
+            // Clona le activities senza usare toObject() per evitare problemi di perdita di dati
             const currentActivities = duplicate(spell.system.activities);
 
-            // Clona l'intero oggetto e aggiorna solo i campi necessari
-            const updateData = {
+            // Crea i dati di aggiornamento necessari, includendo sempre le activities
+            const updateData = foundry.utils.mergeObject({
                 "system.uses.max": "",
-                "system.uses.spent": 0,
-                "system.activities": currentActivities
-            };
+                "system.uses.spent": 0
+            }, { "system.activities": currentActivities }, { overwrite: true, inplace: false });
 
             try {
                 await spell.update(updateData, { noHook: true });

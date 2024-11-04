@@ -90,9 +90,8 @@ export class CompendiumUtilities {
                 "system.activities": currentActivities
             };
 
-            console.log(`Aggiornamento spell ${spell.name}:`, updateData);
             try {
-                await spell.update(updateData);
+                await spell.update(updateData, { noHook: true });
                 console.log(`Spell ${spell.name} aggiornata con successo`);
             } catch (error) {
                 console.error(`Errore nell'aggiornamento della spell ${spell.name}:`, error);
@@ -172,7 +171,7 @@ export class SpellConcentrationFixer {
 
                 console.log(`Aggiornamento concentrazione spell compendio ${item.name}:`, updateData);
                 try {
-                    await item.update(updateData);
+                    await item.update(updateData, { noHook: true });
                     console.log(`Concentrazione spell compendio ${item.name} aggiornata con successo`);
                 } catch (error) {
                     console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);

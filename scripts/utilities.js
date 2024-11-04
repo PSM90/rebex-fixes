@@ -25,17 +25,17 @@ export class CompendiumUtilities {
             await pack.configure({ locked: false });
         }
 
-        const items = await pack.getDocuments();
+        await pack.getIndex();
+        const documents = await pack.getDocuments();
 
-        for (let item of items) {
-            if (item.type === "character") {
-                // Aggiorna gli oggetti di una scheda personaggio nel compendio
-                await this.updateItems(item.items);
+        for (let doc of documents) {
+            if (doc.type === "spell") {
+                await this.updateSpellWithActivities(doc);
             } else {
-                // Aggiorna un oggetto normale nel compendio
-                await this.updateSingleItem(item);
+                await this.updateSingleItem(doc);
             }
         }
+
         ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
     }
 
@@ -46,20 +46,6 @@ export class CompendiumUtilities {
                 const updateData = {
                     "system.uses.max": "",
                     "system.uses.spent": 0,
-                    "system.activities": item.system.activities ? {
-                        ...item.system.activities,
-                        "dnd5eactivity000": {
-                            ...item.system.activities.dnd5eactivity000,
-                            "consumption": {
-                                "targets": [],
-                                "scaling": {
-                                    "allowed": false,
-                                    "max": ""
-                                },
-                                "spellSlot": true
-                            }
-                        }
-                    } : {}
                 };
 
                 console.log(`Aggiornamento item ${item.name}:`, updateData);
@@ -78,21 +64,7 @@ export class CompendiumUtilities {
         if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
             const updateData = {
                 "system.uses.max": "",
-                "system.uses.spent": 0,
-                "system.activities": item.system.activities ? {
-                    ...item.system.activities,
-                    "dnd5eactivity000": {
-                        ...item.system.activities.dnd5eactivity000,
-                        "consumption": {
-                            "targets": [],
-                            "scaling": {
-                                "allowed": false,
-                                "max": ""
-                            },
-                            "spellSlot": true
-                        }
-                    }
-                } : {}
+                "system.uses.spent": 0
             };
 
             console.log(`Aggiornamento item compendio ${item.name}:`, updateData);
@@ -101,6 +73,29 @@ export class CompendiumUtilities {
                 console.log(`Item compendio ${item.name} aggiornato con successo`);
             } catch (error) {
                 console.error(`Errore nell'aggiornamento di ${item.name}:`, error);
+            }
+        }
+    }
+
+    // Funzione per aggiornare una spell con le activities senza cancellarle
+    static async updateSpellWithActivities(spell) {
+        if (spell.system.uses && (spell.system.uses.max === 0 || spell.system.uses.max === "") && spell.system.uses.spent === 0) {
+            // Estrai le activities in una variabile separata
+            const currentActivities = duplicate(spell.system.activities);
+
+            // Clona l'intero oggetto e aggiorna solo i campi necessari
+            const updateData = {
+                "system.uses.max": "",
+                "system.uses.spent": 0,
+                "system.activities": currentActivities
+            };
+
+            console.log(`Aggiornamento spell ${spell.name}:`, updateData);
+            try {
+                await spell.update(updateData);
+                console.log(`Spell ${spell.name} aggiornata con successo`);
+            } catch (error) {
+                console.error(`Errore nell'aggiornamento della spell ${spell.name}:`, error);
             }
         }
     }
@@ -129,13 +124,12 @@ export class SpellConcentrationFixer {
             await pack.configure({ locked: false });
         }
 
-        const items = await pack.getDocuments();
+        await pack.getIndex();
+        const documents = await pack.getDocuments();
 
-        for (let item of items) {
-            if (item.type === "character") {
-                await this.updateSpells(item.items);
-            } else if (item.type === "spell") {
-                await this.updateSingleSpell(item);
+        for (let doc of documents) {
+            if (doc.type === "spell") {
+                await this.updateSingleSpell(doc);
             }
         }
         ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);

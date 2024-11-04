@@ -103,7 +103,19 @@ class RebexFixesApp extends FormApplication {
                 await SpellConcentrationFixer.updateActorSpells(actorName);
             } else if (fixType === "compendium") {
                 const compendiumName = compendiumSelect.val();
+
+                // Sblocco temporaneo del compendio per applicare il fix
+                const pack = game.packs.get(compendiumName);
+                if (pack.locked) {
+                    await pack.configure({ locked: false });
+                }
+
                 await SpellConcentrationFixer.updateCompendiumSpells(compendiumName);
+
+                // Riblocco il compendio dopo le modifiche
+                if (pack.locked === false) {
+                    await pack.configure({ locked: true });
+                }
             }
         });
     }

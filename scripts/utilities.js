@@ -21,7 +21,9 @@ export class CompendiumUtilities {
             return;
         }
 
-        if (pack.locked) {
+        // Sblocco temporaneo del compendio
+        const wasLocked = pack.locked;
+        if (wasLocked) {
             await pack.configure({ locked: false });
         }
 
@@ -34,6 +36,11 @@ export class CompendiumUtilities {
             } else {
                 await this.updateSingleItem(doc);
             }
+        }
+
+        // Riblocca il compendio se era bloccato
+        if (wasLocked) {
+            await pack.configure({ locked: true });
         }
 
         ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
@@ -119,7 +126,9 @@ export class SpellConcentrationFixer {
             return;
         }
 
-        if (pack.locked) {
+        // Sblocco temporaneo del compendio
+        const wasLocked = pack.locked;
+        if (wasLocked) {
             await pack.configure({ locked: false });
         }
 
@@ -131,6 +140,12 @@ export class SpellConcentrationFixer {
                 await this.updateSingleSpell(doc);
             }
         }
+
+        // Riblocca il compendio se era bloccato
+        if (wasLocked) {
+            await pack.configure({ locked: true });
+        }
+
         ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
     }
 

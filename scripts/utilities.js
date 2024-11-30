@@ -15,7 +15,7 @@ export class CompendiumUtilities {
 
     // Funzione per aggiornare tutti gli oggetti in un compendio se 0/0
     static async updateCompendiumItems(compendiumName) {
-        const pack = game.packs.get(compendiumName);
+    const pack = game.packs.get(compendiumName);
         if (!pack) {
             ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
             return;
@@ -25,19 +25,38 @@ export class CompendiumUtilities {
             await pack.configure({ locked: false });
         }
 
-        const items = await pack.getDocuments();
+        const documents = await pack.getDocuments();
 
-        for (let item of items) {
-            if (item.type === "character") {
-                // Aggiorna gli oggetti di una scheda personaggio nel compendio
-                await this.updateItems(item.items);
+        for (let doc of documents) {
+            if (doc.type === "character") {
+                // Aggiorna gli oggetti di una scheda personaggio
+                const items = doc.items;
+                for (let item of items) {
+                    // Applica il fix 0/0 e gestisce le activities
+                    await this.updateSingleItem(item);
+                }
+
+                // Salva gli aggiornamenti per l'attore
+                try {
+                    await doc.update({ items: items.toObject() });
+                    console.log(`Attore "${doc.name}" aggiornato con successo nel compendio.`);
+                } catch (error) {
+                    console.error(`Errore durante il salvataggio dell'attore "${doc.name}":`, error);
+                }
             } else {
                 // Aggiorna un oggetto normale nel compendio
-                await this.updateSingleItem(item);
+                try {
+                    await this.updateSingleItem(doc);
+                    console.log(`Oggetto "${doc.name}" aggiornato con successo nel compendio.`);
+                } catch (error) {
+                    console.error(`Errore nell'aggiornamento di "${doc.name}":`, error);
+                }
             }
         }
+
         ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
     }
+
 
     // Funzione per aggiornare una lista di oggetti
     static async updateItems(items) {

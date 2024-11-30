@@ -42,24 +42,35 @@ export class CompendiumUtilities {
     // Funzione per aggiornare una lista di oggetti
     static async updateItems(items) {
         for (let item of items) {
-            if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
+            if (!Array.isArray(item.system.properties)) {
+                console.warn(`Proprietà "system.properties" non valida per l'oggetto "${item.name}".`);
+                continue; // Salta questo oggetto
+            }
+
+            if (
+                item.system.uses &&
+                (item.system.uses.max === 0 || item.system.uses.max === "") &&
+                item.system.uses.spent === 0
+            ) {
                 const updateData = {
                     "system.uses.max": "",
                     "system.uses.spent": 0,
-                    "system.activities": item.system.activities ? {
-                        ...item.system.activities,
-                        "dnd5eactivity000": {
-                            ...item.system.activities.dnd5eactivity000,
-                            "consumption": {
-                                "targets": [],
-                                "scaling": {
-                                    "allowed": false,
-                                    "max": ""
-                                },
-                                "spellSlot": true
-                            }
-                        }
-                    } : {}
+                    "system.activities": item.system.activities
+                        ? {
+                              ...item.system.activities,
+                              dnd5eactivity000: {
+                                  ...item.system.activities.dnd5eactivity000,
+                                  consumption: {
+                                      targets: [],
+                                      scaling: {
+                                          ...item.system.activities?.dnd5eactivity000?.consumption?.scaling,
+                                      },
+                                      spellSlot:
+                                          item.system.activities?.dnd5eactivity000?.consumption?.spellSlot,
+                                  },
+                              },
+                          }
+                        : {},
                 };
 
                 console.log(`Aggiornamento item ${item.name}:`, updateData);
@@ -73,6 +84,7 @@ export class CompendiumUtilities {
         }
     }
 
+
     // Funzione per aggiornare un singolo oggetto
     static async updateSingleItem(item) {
         if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
@@ -85,11 +97,8 @@ export class CompendiumUtilities {
                         ...item.system.activities.dnd5eactivity000,
                         "consumption": {
                             "targets": [],
-                            "scaling": {
-                                "allowed": false,
-                                "max": ""
-                            },
-                            "spellSlot": true
+                            "scaling": { ...item.system.activities?.dnd5eactivity000?.consumption?.scaling },
+                            "spellSlot": item.system.activities?.dnd5eactivity000?.consumption?.spellSlot
                         }
                     }
                 } : {}

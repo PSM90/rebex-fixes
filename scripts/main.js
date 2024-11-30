@@ -69,7 +69,6 @@ class RebexFixesApp extends FormApplication {
         const compendiumSelect = html.find('#compendium-select');
         const fixActorButton = html.find('#fix-actor-button');
         const fixConcentrationButton = html.find('#fix-concentration-button');
-        const fixSpellCompendiumButton = html.find('#fix-spellcompentium');
 
         function updateFormVisibility() {
             const fixType = fixTypeSelect.val();
@@ -105,14 +104,6 @@ class RebexFixesApp extends FormApplication {
             } else if (fixType === "compendium") {
                 const compendiumName = compendiumSelect.val();
                 await SpellConcentrationFixer.updateCompendiumSpells(compendiumName);
-            }
-        });
-
-        fixSpellCompendiumButton.on('click', async () => {
-            const fixType = fixTypeSelect.val();
-            if (fixType === "compendium") {
-                const compendiumName = compendiumSelect.val();
-                await CompendiumUtilities.fixSpellCompendium(compendiumName);
             }
         });
     }

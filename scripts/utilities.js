@@ -42,35 +42,21 @@ export class CompendiumUtilities {
     // Funzione per aggiornare una lista di oggetti
     static async updateItems(items) {
         for (let item of items) {
-            if (!Array.isArray(item.system.properties)) {
-                console.warn(`Proprietà "system.properties" non valida per l'oggetto "${item.name}".`);
-                continue; // Salta questo oggetto
-            }
-
-            if (
-                item.system.uses &&
-                (item.system.uses.max === 0 || item.system.uses.max === "") &&
-                item.system.uses.spent === 0
-            ) {
+            if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
                 const updateData = {
                     "system.uses.max": "",
                     "system.uses.spent": 0,
-                    "system.activities": item.system.activities
-                        ? {
-                              ...item.system.activities,
-                              dnd5eactivity000: {
-                                  ...item.system.activities.dnd5eactivity000,
-                                  consumption: {
-                                      targets: [],
-                                      scaling: {
-                                          ...item.system.activities?.dnd5eactivity000?.consumption?.scaling,
-                                      },
-                                      spellSlot:
-                                          item.system.activities?.dnd5eactivity000?.consumption?.spellSlot,
-                                  },
-                              },
-                          }
-                        : {},
+                    "system.activities": item.system.activities ? {
+                        ...item.system.activities,
+                        "dnd5eactivity000": {
+                            ...item.system.activities.dnd5eactivity000,
+                            "consumption": {
+                                "targets": [],
+                                "scaling": { ...item.system.activities?.dnd5eactivity000?.consumption?.scaling },
+                                "spellSlot": item.system.activities?.dnd5eactivity000?.consumption?.spellSlot
+                            }
+                        }
+                    } : {}
                 };
 
                 console.log(`Aggiornamento item ${item.name}:`, updateData);
@@ -84,32 +70,34 @@ export class CompendiumUtilities {
         }
     }
 
-
     // Funzione per aggiornare un singolo oggetto
     static async updateSingleItem(item) {
         if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
             const updateData = {
                 "system.uses.max": "",
                 "system.uses.spent": 0,
-                "system.activities": item.system.activities ? {
-                    ...item.system.activities,
-                    "dnd5eactivity000": {
-                        ...item.system.activities.dnd5eactivity000,
-                        "consumption": {
-                            "targets": [],
-                            "scaling": { ...item.system.activities?.dnd5eactivity000?.consumption?.scaling },
-                            "spellSlot": item.system.activities?.dnd5eactivity000?.consumption?.spellSlot
-                        }
-                    }
-                } : {}
+                "system.activities": item.system.activities
+                    ? {
+                          ...item.system.activities, // Mantiene gli _id originali delle activities
+                          dnd5eactivity000: {
+                              ...item.system.activities.dnd5eactivity000,
+                              consumption: {
+                                  targets: [],
+                                  scaling: { ...item.system.activities?.dnd5eactivity000?.consumption?.scaling },
+                                  spellSlot: item.system.activities?.dnd5eactivity000?.consumption?.spellSlot
+                              }
+                          }
+                      }
+                    : {}
             };
 
             console.log(`Aggiornamento item compendio ${item.name}:`, updateData);
+
             try {
                 await item.update(updateData);
-                console.log(`Item compendio ${item.name} aggiornato con successo`);
+                console.log(`Item compendio ${item.name} aggiornato con successo.`);
             } catch (error) {
-                console.error(`Errore nell'aggiornamento di ${item.name}:`, error);
+                console.error(`Errore nell'aggiornamento di "${item.name}":`, error);
             }
         }
     }
@@ -130,14 +118,21 @@ export class CompendiumUtilities {
         for (let doc of documents) {
             let updatedActivities = {};
 
-            for (const [activityKey, activity] of Object.entries(doc.system.activities || {})) {
-                const newId = `dnd5eactivity-${doc.id}-${Math.floor(Math.random() * 100000)}`;
+            // for (const [activityKey, activity] of Object.entries(doc.system.activities || {})) {
+            //     const newId = `dnd5eactivity-${doc.id}-${Math.floor(Math.random() * 100000)}`;
+            //
+            //     if (activity._id === "dnd5eactivity000") {
+            //         activity._id = newId;
+            //         console.log(`Aggiornato ID activity per "${doc.name}": ${newId}`);
+            //     }
+            //     updatedActivities[activityKey] = activity;
+            // }
 
-                if (activity._id === "dnd5eactivity000") {
-                    activity._id = newId;
-                    console.log(`Aggiornato ID activity per "${doc.name}": ${newId}`);
-                }
-                updatedActivities[activityKey] = activity;
+            for (const [activityKey, activity] of Object.entries(doc.system.activities || {})) {
+                updatedActivities[activityKey] = {
+                    ...activity,
+                    consumption: activity.consumption || {}
+                };
             }
 
             await doc.update({ "system.activities": updatedActivities });

@@ -1,5 +1,3 @@
-// main.js
-
 import { CompendiumUtilities, SpellConcentrationFixer } from './utilities.js';
 
 function registerSettings() {
@@ -69,6 +67,7 @@ class RebexFixesApp extends FormApplication {
         const compendiumSelect = html.find('#compendium-select');
         const fixActorButton = html.find('#fix-actor-button');
         const fixConcentrationButton = html.find('#fix-concentration-button');
+        const fixFeetToMetersButton = html.find('#fix-feet-to-meters-button');
 
         function updateFormVisibility() {
             const fixType = fixTypeSelect.val();
@@ -106,7 +105,17 @@ class RebexFixesApp extends FormApplication {
                 await SpellConcentrationFixer.updateCompendiumSpells(compendiumName);
             }
         });
+
+        // Nuovo Fix Feet in Metri
+        fixFeetToMetersButton.on('click', async () => {
+            const fixType = fixTypeSelect.val();
+            if (fixType === "actor") {
+                const actorName = actorSelect.val();
+                await CompendiumUtilities.fixFeetToMetersActor(actorName);
+            } else if (fixType === "compendium") {
+                const compendiumName = compendiumSelect.val();
+                await CompendiumUtilities.fixFeetToMetersCompendium(compendiumName);
+            }
+        });
     }
 }
-
-export { RebexFixesApp };

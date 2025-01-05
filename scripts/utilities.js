@@ -1,5 +1,3 @@
-// utilities.js
-
 export class CompendiumUtilities {
     // Funzione per aggiornare gli oggetti di una scheda personaggio se 0/0
     static async updateActorItems(actorName) {
@@ -8,14 +6,13 @@ export class CompendiumUtilities {
             ui.notifications.error(`Personaggio "${actorName}" non trovato.`);
             return;
         }
-
         await this.updateItems(actor.items);
         ui.notifications.info(`${actor.name}: Oggetti aggiornati correttamente!`);
     }
 
     // Funzione per aggiornare tutti gli oggetti in un compendio se 0/0
     static async updateCompendiumItems(compendiumName) {
-    const pack = game.packs.get(compendiumName);
+        const pack = game.packs.get(compendiumName);
         if (!pack) {
             ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
             return;
@@ -26,39 +23,79 @@ export class CompendiumUtilities {
         }
 
         const documents = await pack.getDocuments();
+        console.log(`Trovati ${documents.length} personaggi nel compendio "${compendiumName}".`);
 
-        for (let doc of documents) {
-            if (doc.type === "character") {
-                // Aggiorna gli oggetti di una scheda personaggio
-                const items = doc.items;
-                for (let item of items) {
-                    // Applica il fix 0/0 e gestisce le activities
-                    await this.updateSingleItem(item);
+        async function updateActor(actor) {
+            console.log(`Iniziando aggiornamento per: "${actor.name}"`);
+
+            const updatedItems = [];
+
+            for (let item of actor.items) {
+                const updateData = {};
+
+                // Fix 0/0 sugli oggetti
+                if (
+                    item.system.uses &&
+                    (item.system.uses.max === 0 || item.system.uses.max === "") &&
+                    item.system.uses.spent === 0
+                ) {
+                    updateData["system.uses.max"] = "";
+                    updateData["system.uses.spent"] = 0;
                 }
 
-                // Salva gli aggiornamenti per l'attore
+                // Fix concentrazione se manca
+                if (
+                    item.type === "spell" &&
+                    item.flags?.dnd5e?.migratedProperties?.includes("concentration") &&
+                    !item.system.duration.concentration
+                ) {
+                    updateData["system.duration.concentration"] = true;
+                }
+
+                if (item.system.activities) {
+                    updateData["system.activities"] = {
+                        ...item.system.activities,
+                        dnd5eactivity000: {
+                            ...item.system.activities.dnd5eactivity000,
+                            consumption: {
+                                targets: [],
+                                scaling: { ...item.system.activities?.dnd5eactivity000?.consumption?.scaling },
+                                spellSlot: item.system.activities?.dnd5eactivity000?.consumption?.spellSlot
+                            }
+                        }
+                    };
+                }
+
+                if (Object.keys(updateData).length > 0) {
+                    updatedItems.push({ _id: item._id, ...updateData });
+                }
+            }
+
+            if (updatedItems.length > 0) {
                 try {
-                    await doc.update({ items: items.toObject() });
-                    console.log(`Attore "${doc.name}" aggiornato con successo nel compendio.`);
+                    await actor.update({ items: updatedItems });
+                    console.log(`Attore "${actor.name}" aggiornato con successo nel compendio.`);
                 } catch (error) {
-                    console.error(`Errore durante il salvataggio dell'attore "${doc.name}":`, error);
+                    console.error(`Errore durante il salvataggio dell'attore "${actor.name}":`, error);
                 }
             } else {
-                // Aggiorna un oggetto normale nel compendio
-                try {
-                    await this.updateSingleItem(doc);
-                    console.log(`Oggetto "${doc.name}" aggiornato con successo nel compendio.`);
-                } catch (error) {
-                    console.error(`Errore nell'aggiornamento di "${doc.name}":`, error);
-                }
+                console.log(`Nessun aggiornamento necessario per l'attore "${actor.name}".`);
             }
         }
 
-        ui.notifications.info(`Compendio "${compendiumName}" aggiornato correttamente!`);
+        async function processActors(documents, delay) {
+            for (let actor of documents) {
+                await updateActor(actor);
+                console.log(`Attesa di ${delay / 1000} secondi prima del prossimo aggiornamento...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+            console.log(`Fix 0/0 e concentrazione completato per tutti i personaggi nel compendio "${compendiumName}".`);
+        }
+
+        processActors(documents, 2000);
     }
 
-
-    // Funzione per aggiornare una lista di oggetti
+    // Funzione per aggiornare oggetti singoli 0/0
     static async updateItems(items) {
         for (let item of items) {
             if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
@@ -70,9 +107,9 @@ export class CompendiumUtilities {
                         "dnd5eactivity000": {
                             ...item.system.activities.dnd5eactivity000,
                             "consumption": {
-                                "targets": [],
-                                "scaling": { ...item.system.activities?.dnd5eactivity000?.consumption?.scaling },
-                                "spellSlot": item.system.activities?.dnd5eactivity000?.consumption?.spellSlot
+                                targets: [],
+                                scaling: { ...item.system.activities?.dnd5eactivity000?.consumption?.scaling },
+                                spellSlot: item.system.activities?.dnd5eactivity000?.consumption?.spellSlot
                             }
                         }
                     } : {}
@@ -89,76 +126,87 @@ export class CompendiumUtilities {
         }
     }
 
-    // Funzione per aggiornare un singolo oggetto
-    static async updateSingleItem(item) {
-        if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
-            const updateData = {
-                "system.uses.max": "",
-                "system.uses.spent": 0,
-                "system.activities": item.system.activities
-                    ? {
-                          ...item.system.activities, // Mantiene gli _id originali delle activities
-                          dnd5eactivity000: {
-                              ...item.system.activities.dnd5eactivity000,
-                              consumption: {
-                                  targets: [],
-                                  scaling: { ...item.system.activities?.dnd5eactivity000?.consumption?.scaling },
-                                  spellSlot: item.system.activities?.dnd5eactivity000?.consumption?.spellSlot
-                              }
-                          }
-                      }
-                    : {}
-            };
-
-            console.log(`Aggiornamento item compendio ${item.name}:`, updateData);
-
-            try {
-                await item.update(updateData);
-                console.log(`Item compendio ${item.name} aggiornato con successo.`);
-            } catch (error) {
-                console.error(`Errore nell'aggiornamento di "${item.name}":`, error);
-            }
+    // Fix Feet in Metri per singolo attore
+    static async fixFeetToMetersActor(actorName) {
+        let actor = game.actors.getName(actorName);
+        if (!actor) {
+            ui.notifications.error(`Personaggio "${actorName}" non trovato.`);
+            return;
         }
+        await this.convertFeetToMeters(actor.items);
+        ui.notifications.info(`${actor.name}: Conversione piedi a metri completata!`);
     }
 
-    // Funzione per fixare un compendio di spell
-    static async fixSpellCompendium(compendiumName) {
+    // Fix Feet in Metri per compendio intero
+    static async fixFeetToMetersCompendium(compendiumName) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
             ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
             return;
         }
 
-        const wasLocked = pack.locked;
-        if (wasLocked) await pack.configure({ locked: false });
+        if (pack.locked) {
+            await pack.configure({ locked: false });
+        }
 
         const documents = await pack.getDocuments();
 
         for (let doc of documents) {
-            let updatedActivities = {};
-
-            // for (const [activityKey, activity] of Object.entries(doc.system.activities || {})) {
-            //     const newId = `dnd5eactivity-${doc.id}-${Math.floor(Math.random() * 100000)}`;
-            //
-            //     if (activity._id === "dnd5eactivity000") {
-            //         activity._id = newId;
-            //         console.log(`Aggiornato ID activity per "${doc.name}": ${newId}`);
-            //     }
-            //     updatedActivities[activityKey] = activity;
-            // }
-
-            for (const [activityKey, activity] of Object.entries(doc.system.activities || {})) {
-                updatedActivities[activityKey] = {
-                    ...activity,
-                    consumption: activity.consumption || {}
-                };
-            }
-
-            await doc.update({ "system.activities": updatedActivities });
+            await this.convertFeetToMeters(doc.items);
         }
 
-        if (wasLocked) await pack.configure({ locked: true });
-        ui.notifications.info(`Compendio di incantesimi "${compendiumName}" aggiornato correttamente!`);
+        ui.notifications.info(`Compendio "${compendiumName}" aggiornato per piedi in metri!`);
+    }
+
+    // Conversione piedi in metri (formula: 1,5m = 5ft)
+    static async convertFeetToMeters(items) {
+        const FEET_TO_METERS = 1.5 / 5;
+
+        for (let item of items) {
+            const updateData = {};
+
+            // Converti velocità e sensi
+            if (item.system.attributes?.speed) {
+                let speed = item.system.attributes.speed;
+                if (speed.units === "ft") {
+                    speed.value = (speed.value * FEET_TO_METERS).toFixed(1);
+                    speed.units = "m";
+                    updateData["system.attributes.speed"] = speed;
+                }
+            }
+
+            // Converti attacchi (normal, reach) e distanze varie
+            if (item.system.range) {
+                if (item.system.range.units === "ft") {
+                    item.system.range.value = (item.system.range.value * FEET_TO_METERS).toFixed(1);
+                    item.system.range.long = item.system.range.long ? (item.system.range.long * FEET_TO_METERS).toFixed(1) : 0;
+                    item.system.range.units = "m";
+                    updateData["system.range"] = item.system.range;
+                }
+            }
+
+            // Converti area (template)
+            if (item.system.target?.template) {
+                let template = item.system.target.template;
+                if (template.units === "ft") {
+                    template.width = template.width ? (template.width * FEET_TO_METERS).toFixed(1) : null;
+                    template.height = template.height ? (template.height * FEET_TO_METERS).toFixed(1) : null;
+                    template.size = template.size ? (template.size * FEET_TO_METERS).toFixed(1) : null;
+                    template.units = "m";
+                    updateData["system.target.template"] = template;
+                }
+            }
+
+            // Esegui l'aggiornamento se ci sono modifiche
+            if (Object.keys(updateData).length > 0) {
+                try {
+                    await item.update(updateData);
+                    console.log(`Item ${item.name} convertito da piedi a metri con successo.`);
+                } catch (error) {
+                    console.error(`Errore nella conversione piedi a metri per ${item.name}:`, error);
+                }
+            }
+        }
     }
 }
 
@@ -200,42 +248,14 @@ export class SpellConcentrationFixer {
     static async updateSpells(items) {
         for (let item of items) {
             if (item.type === "spell" && item.flags?.dnd5e?.migratedProperties?.includes("concentration") && !item.system.duration.concentration) {
-                let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
-
-                if (!properties.includes("concentration")) {
-                    const updateData = {
-                        "flags.midiProperties.concentration": true,
-                        "system.duration.concentration": true,
-                        "system.properties": [...properties, "concentration"]
-                    };
-
-                    console.log(`Aggiornamento concentrazione spell ${item.name}:`, updateData);
-                    try {
-                        await item.update(updateData);
-                        console.log(`Concentrazione spell ${item.name} aggiornata con successo`);
-                    } catch (error) {
-                        console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
-                    }
-                }
-            }
-        }
-    }
-
-    static async updateSingleSpell(item) {
-        if (item.type === "spell" && item.flags?.dnd5e?.migratedProperties?.includes("concentration") && !item.system.duration.concentration) {
-            let properties = Array.isArray(item.system.properties) ? item.system.properties : [];
-
-            if (!properties.includes("concentration")) {
                 const updateData = {
-                    "flags.midiProperties.concentration": true,
-                    "system.duration.concentration": true,
-                    "system.properties": [...properties, "concentration"]
+                    "system.duration.concentration": true
                 };
 
-                console.log(`Aggiornamento concentrazione spell compendio ${item.name}:`, updateData);
+                console.log(`Aggiornamento concentrazione spell ${item.name}:`, updateData);
                 try {
                     await item.update(updateData);
-                    console.log(`Concentrazione spell compendio ${item.name} aggiornata con successo`);
+                    console.log(`Concentrazione spell ${item.name} aggiornata con successo`);
                 } catch (error) {
                     console.error(`Errore nell'aggiornamento della concentrazione di ${item.name}:`, error);
                 }

@@ -140,11 +140,9 @@ export class CompendiumUtilities {
         for (let doc of documents) {
             if (actionType === 'pg') {
                 await this.convertActorAttributesToMeters(doc);
-                ui.notifications.info(`Compendio "${compendiumName}" aggiornato per piedi in metri (attributi)!`);
             }
             if (actionType === 'items') {
                 await this.convertItemsToMeters(doc.items);
-                ui.notifications.info(`Compendio "${compendiumName}" aggiornato per piedi in metri (attacchi)!`);
             }
         }
 

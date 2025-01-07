@@ -208,7 +208,10 @@ export class CompendiumUtilities {
         if (actor.system.attributes?.movement && actor.system.attributes.movement.units === "ft") {
             for (const key of Object.keys(actor.system.attributes.movement)) {
                 if (typeof actor.system.attributes.movement[key] === 'number' && actor.system.attributes.movement[key] > 0) {
-                    actor.system.attributes.movement[key] = (actor.system.attributes.movement[key] * FEET_TO_METERS).toFixed(1);
+                    let convertedMovement = (actor.system.attributes.movement[key] * FEET_TO_METERS).toFixed(1);
+                    actor.system.attributes.movement[key] = convertedMovement.endsWith('.0')
+                        ? convertedMovement.replace('.0', '')
+                        : convertedMovement.replace('.', ',');
                 }
             }
             actor.system.attributes.movement.units = "m";
@@ -219,7 +222,10 @@ export class CompendiumUtilities {
         if (actor.system.attributes?.senses && actor.system.attributes.senses.units === "ft") {
             for (const key of Object.keys(actor.system.attributes.senses)) {
                 if (typeof actor.system.attributes.senses[key] === 'number' && actor.system.attributes.senses[key] > 0) {
-                    actor.system.attributes.senses[key] = (actor.system.attributes.senses[key] * FEET_TO_METERS).toFixed(1);
+                    let convertedSenses = (actor.system.attributes.senses[key] * FEET_TO_METERS).toFixed(1);
+                    actor.system.attributes.senses[key] = convertedSenses.endsWith('.0')
+                        ? convertedSenses.replace('.0', '')
+                        : convertedSenses.replace('.', ',');
                 }
             }
             actor.system.attributes.senses.units = "m";
@@ -247,28 +253,35 @@ export class CompendiumUtilities {
             // Raggio d'azione e portata (range e reach)
             if (item.system.range && item.system.range.units === "ft") {
                 if (item.system.range.value > 0) {
-                    item.system.range.value = (item.system.range.value * FEET_TO_METERS).toFixed(1);
+                    let convertedValue = (item.system.range.value * FEET_TO_METERS).toFixed(1);
+                    updateData["system.range.value"] = convertedValue.endsWith('.0')
+                        ? convertedValue.replace('.0', '')
+                        : convertedValue.replace('.', ',');
                 }
                 if (item.system.range.reach === "") {
-                    item.system.range.reach = 1.5;
+                    updateData["system.range.reach"] = 1.5;
                 } else if (item.system.range.reach > 0) {
-                    item.system.range.reach = (item.system.range.reach * FEET_TO_METERS).toFixed(1);
+                    let convertedReach = (item.system.range.reach * FEET_TO_METERS).toFixed(1);
+                    updateData["system.range.reach"] = convertedReach.endsWith('.0')
+                        ? convertedReach.replace('.0', '')
+                        : convertedReach.replace('.', ',');
                 }
                 item.system.range.units = "m";
-                updateData["system.range"] = item.system.range;
+                updateData["system.range.units"] = "m";
             }
 
             // Area di effetto (cone, sphere, cube, ecc.)
             if (item.system.target?.template && item.system.target.template.units === "ft") {
-                if (item.system.target.template.width > 0) {
-                    item.system.target.template.width = (item.system.target.template.width * FEET_TO_METERS).toFixed(1);
-                }
-                if (item.system.target.template.height > 0) {
-                    item.system.target.template.height = (item.system.target.template.height * FEET_TO_METERS).toFixed(1);
-                }
-                if (item.system.target.template.size > 0) {
-                    item.system.target.template.size = (item.system.target.template.size * FEET_TO_METERS).toFixed(1);
-                }
+                const templateKeys = ["width", "height", "size"];
+                templateKeys.forEach(key => {
+                    if (item.system.target.template[key] > 0) {
+                        let convertedSize = (item.system.target.template[key] * FEET_TO_METERS).toFixed(1);
+                        item.system.target.template[key] = convertedSize.endsWith('.0')
+                            ? convertedSize.replace('.0', '')
+                            : convertedSize.replace('.', ',');
+                    }
+                });
+
                 item.system.target.template.units = "m";
                 updateData["system.target.template"] = item.system.target.template;
             }
@@ -284,6 +297,7 @@ export class CompendiumUtilities {
             }
         }
     }
+
 
 }
 

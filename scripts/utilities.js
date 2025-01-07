@@ -138,30 +138,32 @@ export class CompendiumUtilities {
         const documents = await pack.getDocuments();
 
         for (let doc of documents) {
-            // Aggiorna attore (movimento e sensi)
-            if(actionType === 'pg'){
+            if (actionType === 'pg') {
                 await this.convertActorAttributesToMeters(doc);
                 ui.notifications.info(`Compendio "${compendiumName}" aggiornato per piedi in metri (attributi)!`);
             }
-            // Aggiorna gli oggetti, spell, attacchi, ecc.
-            if(actionType === 'items'){
+            if (actionType === 'items') {
                 await this.convertItemsToMeters(doc.items);
                 ui.notifications.info(`Compendio "${compendiumName}" aggiornato per piedi in metri (attacchi)!`);
             }
         }
+
+        if(actionType === 'pg'){
+            ui.notifications.info(`Compendio "${compendiumName}" aggiornato per piedi in metri (attributi)!`);
+        }
+        if(actionType === 'items'){
+            ui.notifications.info(`Compendio "${compendiumName}" aggiornato per piedi in metri (attacchi)!`);
+        }
     }
 
-
-    static convertActorAttributesToMeters(actor) {
+    static async convertActorAttributesToMeters(actor) {
         const FEET_TO_METERS = 1.5 / 5;
         let updateData = {};
 
-        // Controllo se movement esiste ed è definito
         if (actor.system.attributes.movement) {
             let movement = actor.system.attributes.movement;
 
             if (movement.units === "ft") {
-                // Lista delle chiavi di movimento da convertire
                 const movementKeys = ["walk", "fly", "swim", "climb", "burrow"];
 
                 movementKeys.forEach(key => {
@@ -178,7 +180,6 @@ export class CompendiumUtilities {
             }
         }
 
-        // Aggiornamento dei sensi (es: darkvision, truesight)
         if (actor.system.attributes.senses) {
             let senses = actor.system.attributes.senses;
 
@@ -199,8 +200,15 @@ export class CompendiumUtilities {
             }
         }
 
-        return updateData;
+        // Aggiornamento effettivo dell'attore
+        if (Object.keys(updateData).length > 0) {
+            await actor.update(updateData);
+            console.log(`Aggiornato ${actor.name}:`, updateData);
+        } else {
+            console.log(`Nessuna conversione necessaria per ${actor.name}`);
+        }
     }
+
 
 
 

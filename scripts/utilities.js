@@ -52,20 +52,6 @@ export class CompendiumUtilities {
                     updateData["system.duration.concentration"] = true;
                 }
 
-                if (item.system.activities) {
-                    updateData["system.activities"] = {
-                        ...item.system.activities,
-                        dnd5eactivity000: {
-                            ...item.system.activities.dnd5eactivity000,
-                            consumption: {
-                                targets: [],
-                                scaling: { ...item.system.activities?.dnd5eactivity000?.consumption?.scaling },
-                                spellSlot: item.system.activities?.dnd5eactivity000?.consumption?.spellSlot
-                            }
-                        }
-                    };
-                }
-
                 if (Object.keys(updateData).length > 0) {
                     updatedItems.push({ _id: item._id, ...updateData });
                 }
@@ -101,18 +87,7 @@ export class CompendiumUtilities {
             if (item.system.uses && (item.system.uses.max === 0 || item.system.uses.max === "") && item.system.uses.spent === 0) {
                 const updateData = {
                     "system.uses.max": "",
-                    "system.uses.spent": 0,
-                    "system.activities": item.system.activities ? {
-                        ...item.system.activities,
-                        "dnd5eactivity000": {
-                            ...item.system.activities.dnd5eactivity000,
-                            "consumption": {
-                                targets: [],
-                                scaling: { ...item.system.activities?.dnd5eactivity000?.consumption?.scaling },
-                                spellSlot: item.system.activities?.dnd5eactivity000?.consumption?.spellSlot
-                            }
-                        }
-                    } : {}
+                    "system.uses.spent": 0
                 };
 
                 console.log(`Aggiornamento item ${item.name}:`, updateData);
@@ -126,7 +101,7 @@ export class CompendiumUtilities {
         }
     }
 
-    // Fix Feet in Metri per singolo attore
+    // Fix Feet in Metri per attore
     static async fixFeetToMetersActor(actorName) {
         let actor = game.actors.getName(actorName);
         if (!actor) {
@@ -137,7 +112,7 @@ export class CompendiumUtilities {
         ui.notifications.info(`${actor.name}: Conversione piedi a metri completata!`);
     }
 
-    // Fix Feet in Metri per compendio intero
+    // Fix Feet in Metri per compendio
     static async fixFeetToMetersCompendium(compendiumName) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
@@ -165,46 +140,39 @@ export class CompendiumUtilities {
         for (let item of items) {
             const updateData = {};
 
-            // Converti velocità e sensi
-            if (item.system.attributes?.speed) {
-                let speed = item.system.attributes.speed;
-                if (speed.units === "ft") {
-                    speed.value = (speed.value * FEET_TO_METERS).toFixed(1);
-                    speed.units = "m";
-                    updateData["system.attributes.speed"] = speed;
+            // Converti velocità e movimento
+            if (item.system.attributes?.movement && item.system.attributes.movement.units === "ft") {
+                for (const key of Object.keys(item.system.attributes.movement)) {
+                    if (typeof item.system.attributes.movement[key] === 'number' && item.system.attributes.movement[key] > 0) {
+                        item.system.attributes.movement[key] = (item.system.attributes.movement[key] * FEET_TO_METERS).toFixed(1);
+                    }
                 }
+                item.system.attributes.movement.units = "m";
+                updateData["system.attributes.movement"] = item.system.attributes.movement;
             }
 
-            // Converti attacchi (normal, reach) e distanze varie
+            // Converti sensi (es: darkvision, truesight)
+            if (item.system.attributes?.senses && item.system.attributes.senses.units === "ft") {
+                for (const key of Object.keys(item.system.attributes.senses)) {
+                    if (typeof item.system.attributes.senses[key] === 'number' && item.system.attributes.senses[key] > 0) {
+                        item.system.attributes.senses[key] = (item.system.attributes.senses[key] * FEET_TO_METERS).toFixed(1);
+                    }
+                }
+                item.system.attributes.senses.units = "m";
+                updateData["system.attributes.senses"] = item.system.attributes.senses;
+            }
+
+            // Converti attacchi (range e reach)
             if (item.system.range) {
                 if (item.system.range.units === "ft") {
                     item.system.range.value = (item.system.range.value * FEET_TO_METERS).toFixed(1);
-                    item.system.range.long = item.system.range.long ? (item.system.range.long * FEET_TO_METERS).toFixed(1) : 0;
+                    item.system.range.reach = item.system.range.reach === "" ? 1.5 : (item.system.range.reach * FEET_TO_METERS).toFixed(1);
                     item.system.range.units = "m";
                     updateData["system.range"] = item.system.range;
                 }
             }
-
-            // Converti area (template)
-            if (item.system.target?.template) {
-                let template = item.system.target.template;
-                if (template.units === "ft") {
-                    template.width = template.width ? (template.width * FEET_TO_METERS).toFixed(1) : null;
-                    template.height = template.height ? (template.height * FEET_TO_METERS).toFixed(1) : null;
-                    template.size = template.size ? (template.size * FEET_TO_METERS).toFixed(1) : null;
-                    template.units = "m";
-                    updateData["system.target.template"] = template;
-                }
-            }
-
-            // Esegui l'aggiornamento se ci sono modifiche
             if (Object.keys(updateData).length > 0) {
-                try {
-                    await item.update(updateData);
-                    console.log(`Item ${item.name} convertito da piedi a metri con successo.`);
-                } catch (error) {
-                    console.error(`Errore nella conversione piedi a metri per ${item.name}:`, error);
-                }
+                await item.update(updateData);
             }
         }
     }

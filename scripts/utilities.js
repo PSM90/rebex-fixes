@@ -102,7 +102,7 @@ export class CompendiumUtilities {
     }
 
     // Fix Feet to Meters per singolo attore (sensi + movimento + oggetti)
-    static async fixFeetToMetersActor(actorName) {
+    static async fixFeetToMetersActor(actorName, actionType) {
         let actor = game.actors.getName(actorName);
         if (!actor) {
             ui.notifications.error(`Personaggio "${actorName}" non trovato.`);
@@ -110,16 +110,21 @@ export class CompendiumUtilities {
         }
 
         // Aggiornamento sensi e movimento
-        await this.convertActorAttributesToMeters(actor);
-
+        if(actionType === 'pg'){
+            await this.convertActorAttributesToMeters(actor);
+            ui.notifications.info(`${actor.name}: Conversione piedi a metri (attributi) completata!`);
+        }
         // Aggiornamento oggetti e attacchi
-        await this.convertItemsToMeters(actor.items);
+        if(actionType === 'items'){
+            await this.convertItemsToMeters(actor.items);
+            ui.notifications.info(`${actor.name}: Conversione piedi a metri (attacchi) completata!`);
+        }
 
-        ui.notifications.info(`${actor.name}: Conversione piedi a metri completata!`);
+
     }
 
     // Fix Feet to Meters per un intero compendio
-    static async fixFeetToMetersCompendium(compendiumName) {
+    static async fixFeetToMetersCompendium(compendiumName, actionType) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
             ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
@@ -134,13 +139,16 @@ export class CompendiumUtilities {
 
         for (let doc of documents) {
             // Aggiorna attore (movimento e sensi)
-            await this.convertActorAttributesToMeters(doc);
-
+            if(actionType === 'pg'){
+                await this.convertActorAttributesToMeters(doc);
+                ui.notifications.info(`Compendio "${compendiumName}" aggiornato per piedi in metri (attributi)!`);
+            }
             // Aggiorna gli oggetti, spell, attacchi, ecc.
-            await this.convertItemsToMeters(doc.items);
+            if(actionType === 'items'){
+                await this.convertItemsToMeters(doc.items);
+                ui.notifications.info(`Compendio "${compendiumName}" aggiornato per piedi in metri (attacchi)!`);
+            }
         }
-
-        ui.notifications.info(`Compendio "${compendiumName}" aggiornato per piedi in metri!`);
     }
 
 

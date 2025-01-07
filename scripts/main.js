@@ -68,6 +68,7 @@ class RebexFixesApp extends FormApplication {
         const fixActorButton = html.find('#fix-actor-button');
         const fixConcentrationButton = html.find('#fix-concentration-button');
         const fixFeetToMetersButton = html.find('#fix-feet-to-meters-button');
+        const fixFeetToMetersButtonPG = html.find('#fix-feet-to-meters-pg-button');
 
         function updateFormVisibility() {
             const fixType = fixTypeSelect.val();
@@ -106,15 +107,25 @@ class RebexFixesApp extends FormApplication {
             }
         });
 
-        // Nuovo Fix Feet in Metri
         fixFeetToMetersButton.on('click', async () => {
             const fixType = fixTypeSelect.val();
             if (fixType === "actor") {
                 const actorName = actorSelect.val();
-                await CompendiumUtilities.fixFeetToMetersActor(actorName);
+                await CompendiumUtilities.fixFeetToMetersActor(actorName, 'items');
             } else if (fixType === "compendium") {
                 const compendiumName = compendiumSelect.val();
-                await CompendiumUtilities.fixFeetToMetersCompendium(compendiumName);
+                await CompendiumUtilities.fixFeetToMetersCompendium(compendiumName, 'items');
+            }
+        });
+
+        fixFeetToMetersButtonPG.on('click', async () => {
+            const fixType = fixTypeSelect.val();
+            if (fixType === "actor") {
+                const actorName = actorSelect.val();
+                await CompendiumUtilities.fixFeetToMetersActor(actorName, 'pg');
+            } else if (fixType === "compendium") {
+                const compendiumName = compendiumSelect.val();
+                await CompendiumUtilities.fixFeetToMetersCompendium(compendiumName, 'pg');
             }
         });
     }

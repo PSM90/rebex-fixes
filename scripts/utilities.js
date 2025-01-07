@@ -144,104 +144,51 @@ export class CompendiumUtilities {
     }
 
 
-    // Conversione da Feet a Meters
-    static convertFeetToMeters(document, updateData) {
-        const FEET_TO_METERS = 1.5 / 5;
-
-        // Aggiornamento Velocità (Movement)
-        if (document.system.movement && document.system.movement.units === "ft") {
-            for (const [key, value] of Object.entries(document.system.movement)) {
-                if (typeof value === 'number' && value > 0) {
-                    document.system.movement[key] = parseFloat((value * FEET_TO_METERS).toFixed(1));
-                }
-            }
-            document.system.movement.units = "m";
-            updateData["system.movement"] = document.system.movement;
-        }
-
-        // Aggiornamento Sensi (Senses)
-        if (document.system.senses && document.system.senses.units === "ft") {
-            for (const [key, value] of Object.entries(document.system.senses)) {
-                if (typeof value === 'number' && value > 0) {
-                    document.system.senses[key] = parseFloat((value * FEET_TO_METERS).toFixed(1));
-                }
-            }
-            document.system.senses.units = "m";
-            updateData["system.senses"] = document.system.senses;
-        }
-
-        // Aggiornamento Raggio d'azione e Reach
-        if (document.system.range && document.system.range.units === "ft") {
-            if (document.system.range.value) {
-                document.system.range.value = parseFloat((document.system.range.value * FEET_TO_METERS).toFixed(1));
-            }
-            if (document.system.range.reach === "") {
-                document.system.range.reach = 1.5;
-            } else if (document.system.range.reach > 0) {
-                document.system.range.reach = parseFloat((document.system.range.reach * FEET_TO_METERS).toFixed(1));
-            }
-            document.system.range.units = "m";
-            updateData["system.range"] = document.system.range;
-        }
-
-        // Aggiornamento Area di Effetto (Area)
-        if (document.system.target?.template && document.system.target.template.units === "ft") {
-            if (document.system.target.template.width > 0) {
-                document.system.target.template.width = parseFloat((document.system.target.template.width * FEET_TO_METERS).toFixed(1));
-            }
-            if (document.system.target.template.height > 0) {
-                document.system.target.template.height = parseFloat((document.system.target.template.height * FEET_TO_METERS).toFixed(1));
-            }
-            if (document.system.target.template.size > 0) {
-                document.system.target.template.size = parseFloat((document.system.target.template.size * FEET_TO_METERS).toFixed(1));
-            }
-            document.system.target.template.units = "m";
-            updateData["system.target.template"] = document.system.target.template;
-        }
-    }
-
-    static async convertActorAttributesToMeters(actor) {
+    static convertActorAttributesToMeters(actor) {
         const FEET_TO_METERS = 1.5 / 5;
         let updateData = {};
 
-        // Velocità e movimento (es: walk, fly, swim)
-        if (actor.system.attributes?.movement && actor.system.attributes.movement.units === "ft") {
-            for (const key of Object.keys(actor.system.attributes.movement)) {
-                if (typeof actor.system.attributes.movement[key] === 'number' && actor.system.attributes.movement[key] > 0) {
-                    let convertedMovement = (actor.system.attributes.movement[key] * FEET_TO_METERS).toFixed(1);
-                    actor.system.attributes.movement[key] = convertedMovement.endsWith('.0')
-                        ? convertedMovement.replace('.0', '')
-                        : convertedMovement.replace('.', ',');
+        // Aggiornamento del movimento (es: walk, fly, swim)
+        if (actor.system.attributes.movement?.units === "ft") {
+            const movementKeys = ["walk", "fly", "swim", "climb", "burrow"];
+
+            movementKeys.forEach(key => {
+                let value = actor.system.attributes.movement[key];
+
+                if (typeof value === 'number' && value > 0) {
+                    let convertedValue = (value * FEET_TO_METERS).toFixed(1);
+                    actor.system.attributes.movement[key] = convertedValue.endsWith('.0')
+                        ? parseFloat(convertedValue)
+                        : parseFloat(convertedValue);
                 }
-            }
+            });
+
             actor.system.attributes.movement.units = "m";
             updateData["system.attributes.movement"] = actor.system.attributes.movement;
         }
 
-        // Sensi (es: darkvision, truesight)
-        if (actor.system.attributes?.senses && actor.system.attributes.senses.units === "ft") {
-            for (const key of Object.keys(actor.system.attributes.senses)) {
-                if (typeof actor.system.attributes.senses[key] === 'number' && actor.system.attributes.senses[key] > 0) {
-                    let convertedSenses = (actor.system.attributes.senses[key] * FEET_TO_METERS).toFixed(1);
-                    actor.system.attributes.senses[key] = convertedSenses.endsWith('.0')
-                        ? convertedSenses.replace('.0', '')
-                        : convertedSenses.replace('.', ',');
+        // Aggiornamento dei sensi (es: darkvision, truesight)
+        if (actor.system.attributes.senses?.units === "ft") {
+            const sensesKeys = ["darkvision", "blindsight", "tremorsense", "truesight"];
+
+            sensesKeys.forEach(key => {
+                let value = actor.system.attributes.senses[key];
+
+                if (typeof value === 'number' && value > 0) {
+                    let convertedSense = (value * FEET_TO_METERS).toFixed(1);
+                    actor.system.attributes.senses[key] = convertedSense.endsWith('.0')
+                        ? parseFloat(convertedSense)
+                        : parseFloat(convertedSense);
                 }
-            }
+            });
+
             actor.system.attributes.senses.units = "m";
             updateData["system.attributes.senses"] = actor.system.attributes.senses;
         }
 
-        // Applica aggiornamenti solo se ci sono cambiamenti
-        if (Object.keys(updateData).length > 0) {
-            try {
-                await actor.update(updateData);
-                console.log(`Movimento e sensi di "${actor.name}" aggiornati con successo.`);
-            } catch (error) {
-                console.error(`Errore nell'aggiornamento di movimento/sensi per "${actor.name}":`, error);
-            }
-        }
+        return updateData;
     }
+
 
 
     static async convertItemsToMeters(items) {
@@ -255,16 +202,16 @@ export class CompendiumUtilities {
                 if (item.system.range.value > 0) {
                     let convertedValue = (item.system.range.value * FEET_TO_METERS).toFixed(1);
                     updateData["system.range.value"] = convertedValue.endsWith('.0')
-                        ? convertedValue.replace('.0', '')
-                        : convertedValue.replace('.', ',');
+                        ? parseFloat(convertedValue)  // Rimuove il decimale .0 mantenendo il punto
+                        : parseFloat(convertedValue);
                 }
                 if (item.system.range.reach === "") {
                     updateData["system.range.reach"] = 1.5;
                 } else if (item.system.range.reach > 0) {
                     let convertedReach = (item.system.range.reach * FEET_TO_METERS).toFixed(1);
                     updateData["system.range.reach"] = convertedReach.endsWith('.0')
-                        ? convertedReach.replace('.0', '')
-                        : convertedReach.replace('.', ',');
+                        ? parseFloat(convertedReach)
+                        : parseFloat(convertedReach);
                 }
                 item.system.range.units = "m";
                 updateData["system.range.units"] = "m";
@@ -277,8 +224,8 @@ export class CompendiumUtilities {
                     if (item.system.target.template[key] > 0) {
                         let convertedSize = (item.system.target.template[key] * FEET_TO_METERS).toFixed(1);
                         item.system.target.template[key] = convertedSize.endsWith('.0')
-                            ? convertedSize.replace('.0', '')
-                            : convertedSize.replace('.', ',');
+                            ? parseFloat(convertedSize)  // Mantiene il formato numerico
+                            : parseFloat(convertedSize);
                     }
                 });
 
@@ -297,8 +244,6 @@ export class CompendiumUtilities {
             }
         }
     }
-
-
 }
 
 export class SpellConcentrationFixer {

@@ -148,46 +148,52 @@ export class CompendiumUtilities {
         const FEET_TO_METERS = 1.5 / 5;
         let updateData = {};
 
-        // Aggiornamento del movimento (es: walk, fly, swim)
-        if (actor.system.attributes.movement?.units === "ft") {
-            const movementKeys = ["walk", "fly", "swim", "climb", "burrow"];
+        // Controllo se movement esiste ed è definito
+        if (actor.system.attributes.movement) {
+            let movement = actor.system.attributes.movement;
 
-            movementKeys.forEach(key => {
-                let value = actor.system.attributes.movement[key];
+            if (movement.units === "ft") {
+                // Lista delle chiavi di movimento da convertire
+                const movementKeys = ["walk", "fly", "swim", "climb", "burrow"];
 
-                if (typeof value === 'number' && value > 0) {
-                    let convertedValue = (value * FEET_TO_METERS).toFixed(1);
-                    actor.system.attributes.movement[key] = convertedValue.endsWith('.0')
-                        ? parseFloat(convertedValue)
-                        : parseFloat(convertedValue);
-                }
-            });
+                movementKeys.forEach(key => {
+                    if (movement[key] !== null && movement[key] !== undefined && movement[key] > 0) {
+                        let convertedValue = (movement[key] * FEET_TO_METERS).toFixed(1);
+                        movement[key] = convertedValue.endsWith('.0')
+                            ? parseFloat(convertedValue)
+                            : parseFloat(convertedValue);
+                    }
+                });
 
-            actor.system.attributes.movement.units = "m";
-            updateData["system.attributes.movement"] = actor.system.attributes.movement;
+                movement.units = "m";
+                updateData["system.attributes.movement"] = movement;
+            }
         }
 
         // Aggiornamento dei sensi (es: darkvision, truesight)
-        if (actor.system.attributes.senses?.units === "ft") {
-            const sensesKeys = ["darkvision", "blindsight", "tremorsense", "truesight"];
+        if (actor.system.attributes.senses) {
+            let senses = actor.system.attributes.senses;
 
-            sensesKeys.forEach(key => {
-                let value = actor.system.attributes.senses[key];
+            if (senses.units === "ft") {
+                const sensesKeys = ["darkvision", "blindsight", "tremorsense", "truesight"];
 
-                if (typeof value === 'number' && value > 0) {
-                    let convertedSense = (value * FEET_TO_METERS).toFixed(1);
-                    actor.system.attributes.senses[key] = convertedSense.endsWith('.0')
-                        ? parseFloat(convertedSense)
-                        : parseFloat(convertedSense);
-                }
-            });
+                sensesKeys.forEach(key => {
+                    if (senses[key] !== null && senses[key] !== undefined && senses[key] > 0) {
+                        let convertedSense = (senses[key] * FEET_TO_METERS).toFixed(1);
+                        senses[key] = convertedSense.endsWith('.0')
+                            ? parseFloat(convertedSense)
+                            : parseFloat(convertedSense);
+                    }
+                });
 
-            actor.system.attributes.senses.units = "m";
-            updateData["system.attributes.senses"] = actor.system.attributes.senses;
+                senses.units = "m";
+                updateData["system.attributes.senses"] = senses;
+            }
         }
 
         return updateData;
     }
+
 
 
 

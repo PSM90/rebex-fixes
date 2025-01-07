@@ -101,7 +101,7 @@ export class CompendiumUtilities {
         }
     }
 
-    // Fix Feet to Meters per un singolo attore
+    // Fix Feet to Meters per singolo attore (sensi + movimento + oggetti)
     static async fixFeetToMetersActor(actorName) {
         let actor = game.actors.getName(actorName);
         if (!actor) {
@@ -109,15 +109,13 @@ export class CompendiumUtilities {
             return;
         }
 
-        const updateData = {};
-        await this.convertFeetToMeters(actor, updateData);
+        // Aggiornamento sensi e movimento
+        await this.convertActorAttributesToMeters(actor);
 
-        if (Object.keys(updateData).length > 0) {
-            await actor.update(updateData);
-            ui.notifications.info(`${actor.name}: Conversione piedi a metri completata!`);
-        } else {
-            ui.notifications.info(`${actor.name}: Nessuna conversione necessaria.`);
-        }
+        // Aggiornamento oggetti e attacchi
+        await this.convertItemsToMeters(actor.items);
+
+        ui.notifications.info(`${actor.name}: Conversione piedi a metri completata!`);
     }
 
     // Fix Feet to Meters per un intero compendio
@@ -135,17 +133,16 @@ export class CompendiumUtilities {
         const documents = await pack.getDocuments();
 
         for (let doc of documents) {
-            const updateData = {};
-            await this.convertFeetToMeters(doc, updateData);
+            // Aggiorna attore (movimento e sensi)
+            await this.convertActorAttributesToMeters(doc);
 
-            if (Object.keys(updateData).length > 0) {
-                await doc.update(updateData);
-                console.log(`"${doc.name}" aggiornato da piedi a metri.`);
-            }
+            // Aggiorna gli oggetti, spell, attacchi, ecc.
+            await this.convertItemsToMeters(doc.items);
         }
 
-        ui.notifications.info(`Compendio "${compendiumName}" aggiornato da piedi a metri!`);
+        ui.notifications.info(`Compendio "${compendiumName}" aggiornato per piedi in metri!`);
     }
+
 
     // Conversione da Feet a Meters
     static convertFeetToMeters(document, updateData) {
@@ -202,6 +199,92 @@ export class CompendiumUtilities {
             updateData["system.target.template"] = document.system.target.template;
         }
     }
+
+    static async convertActorAttributesToMeters(actor) {
+        const FEET_TO_METERS = 1.5 / 5;
+        let updateData = {};
+
+        // Velocità e movimento (es: walk, fly, swim)
+        if (actor.system.attributes?.movement && actor.system.attributes.movement.units === "ft") {
+            for (const key of Object.keys(actor.system.attributes.movement)) {
+                if (typeof actor.system.attributes.movement[key] === 'number' && actor.system.attributes.movement[key] > 0) {
+                    actor.system.attributes.movement[key] = (actor.system.attributes.movement[key] * FEET_TO_METERS).toFixed(1);
+                }
+            }
+            actor.system.attributes.movement.units = "m";
+            updateData["system.attributes.movement"] = actor.system.attributes.movement;
+        }
+
+        // Sensi (es: darkvision, truesight)
+        if (actor.system.attributes?.senses && actor.system.attributes.senses.units === "ft") {
+            for (const key of Object.keys(actor.system.attributes.senses)) {
+                if (typeof actor.system.attributes.senses[key] === 'number' && actor.system.attributes.senses[key] > 0) {
+                    actor.system.attributes.senses[key] = (actor.system.attributes.senses[key] * FEET_TO_METERS).toFixed(1);
+                }
+            }
+            actor.system.attributes.senses.units = "m";
+            updateData["system.attributes.senses"] = actor.system.attributes.senses;
+        }
+
+        // Applica aggiornamenti solo se ci sono cambiamenti
+        if (Object.keys(updateData).length > 0) {
+            try {
+                await actor.update(updateData);
+                console.log(`Movimento e sensi di "${actor.name}" aggiornati con successo.`);
+            } catch (error) {
+                console.error(`Errore nell'aggiornamento di movimento/sensi per "${actor.name}":`, error);
+            }
+        }
+    }
+
+
+    static async convertItemsToMeters(items) {
+        const FEET_TO_METERS = 1.5 / 5;
+
+        for (let item of items) {
+            let updateData = {};
+
+            // Raggio d'azione e portata (range e reach)
+            if (item.system.range && item.system.range.units === "ft") {
+                if (item.system.range.value > 0) {
+                    item.system.range.value = (item.system.range.value * FEET_TO_METERS).toFixed(1);
+                }
+                if (item.system.range.reach === "") {
+                    item.system.range.reach = 1.5;
+                } else if (item.system.range.reach > 0) {
+                    item.system.range.reach = (item.system.range.reach * FEET_TO_METERS).toFixed(1);
+                }
+                item.system.range.units = "m";
+                updateData["system.range"] = item.system.range;
+            }
+
+            // Area di effetto (cone, sphere, cube, ecc.)
+            if (item.system.target?.template && item.system.target.template.units === "ft") {
+                if (item.system.target.template.width > 0) {
+                    item.system.target.template.width = (item.system.target.template.width * FEET_TO_METERS).toFixed(1);
+                }
+                if (item.system.target.template.height > 0) {
+                    item.system.target.template.height = (item.system.target.template.height * FEET_TO_METERS).toFixed(1);
+                }
+                if (item.system.target.template.size > 0) {
+                    item.system.target.template.size = (item.system.target.template.size * FEET_TO_METERS).toFixed(1);
+                }
+                item.system.target.template.units = "m";
+                updateData["system.target.template"] = item.system.target.template;
+            }
+
+            // Se ci sono aggiornamenti, esegui l'update
+            if (Object.keys(updateData).length > 0) {
+                try {
+                    await item.update(updateData);
+                    console.log(`Oggetto "${item.name}" aggiornato con successo.`);
+                } catch (error) {
+                    console.error(`Errore nell'aggiornamento di "${item.name}":`, error);
+                }
+            }
+        }
+    }
+
 }
 
 export class SpellConcentrationFixer {

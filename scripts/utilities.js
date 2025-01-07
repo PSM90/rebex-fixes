@@ -101,18 +101,26 @@ export class CompendiumUtilities {
         }
     }
 
-    // Fix Feet in Metri per attore
+    // Fix Feet to Meters per un singolo attore
     static async fixFeetToMetersActor(actorName) {
         let actor = game.actors.getName(actorName);
         if (!actor) {
             ui.notifications.error(`Personaggio "${actorName}" non trovato.`);
             return;
         }
-        await this.convertFeetToMeters(actor.items);
-        ui.notifications.info(`${actor.name}: Conversione piedi a metri completata!`);
+
+        const updateData = {};
+        await this.convertFeetToMeters(actor, updateData);
+
+        if (Object.keys(updateData).length > 0) {
+            await actor.update(updateData);
+            ui.notifications.info(`${actor.name}: Conversione piedi a metri completata!`);
+        } else {
+            ui.notifications.info(`${actor.name}: Nessuna conversione necessaria.`);
+        }
     }
 
-    // Fix Feet in Metri per compendio
+    // Fix Feet to Meters per un intero compendio
     static async fixFeetToMetersCompendium(compendiumName) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
@@ -127,53 +135,71 @@ export class CompendiumUtilities {
         const documents = await pack.getDocuments();
 
         for (let doc of documents) {
-            await this.convertFeetToMeters(doc.items);
+            const updateData = {};
+            await this.convertFeetToMeters(doc, updateData);
+
+            if (Object.keys(updateData).length > 0) {
+                await doc.update(updateData);
+                console.log(`"${doc.name}" aggiornato da piedi a metri.`);
+            }
         }
 
-        ui.notifications.info(`Compendio "${compendiumName}" aggiornato per piedi in metri!`);
+        ui.notifications.info(`Compendio "${compendiumName}" aggiornato da piedi a metri!`);
     }
 
-    // Conversione piedi in metri (formula: 1,5m = 5ft)
-    static async convertFeetToMeters(items) {
+    // Conversione da Feet a Meters
+    static convertFeetToMeters(document, updateData) {
         const FEET_TO_METERS = 1.5 / 5;
 
-        for (let item of items) {
-            const updateData = {};
-
-            // Converti velocità e movimento
-            if (item.system.attributes?.movement && item.system.attributes.movement.units === "ft") {
-                for (const key of Object.keys(item.system.attributes.movement)) {
-                    if (typeof item.system.attributes.movement[key] === 'number' && item.system.attributes.movement[key] > 0) {
-                        item.system.attributes.movement[key] = (item.system.attributes.movement[key] * FEET_TO_METERS).toFixed(1);
-                    }
-                }
-                item.system.attributes.movement.units = "m";
-                updateData["system.attributes.movement"] = item.system.attributes.movement;
-            }
-
-            // Converti sensi (es: darkvision, truesight)
-            if (item.system.attributes?.senses && item.system.attributes.senses.units === "ft") {
-                for (const key of Object.keys(item.system.attributes.senses)) {
-                    if (typeof item.system.attributes.senses[key] === 'number' && item.system.attributes.senses[key] > 0) {
-                        item.system.attributes.senses[key] = (item.system.attributes.senses[key] * FEET_TO_METERS).toFixed(1);
-                    }
-                }
-                item.system.attributes.senses.units = "m";
-                updateData["system.attributes.senses"] = item.system.attributes.senses;
-            }
-
-            // Converti attacchi (range e reach)
-            if (item.system.range) {
-                if (item.system.range.units === "ft") {
-                    item.system.range.value = (item.system.range.value * FEET_TO_METERS).toFixed(1);
-                    item.system.range.reach = item.system.range.reach === "" ? 1.5 : (item.system.range.reach * FEET_TO_METERS).toFixed(1);
-                    item.system.range.units = "m";
-                    updateData["system.range"] = item.system.range;
+        // Aggiornamento Velocità (Movement)
+        if (document.system.movement && document.system.movement.units === "ft") {
+            for (const [key, value] of Object.entries(document.system.movement)) {
+                if (typeof value === 'number' && value > 0) {
+                    document.system.movement[key] = parseFloat((value * FEET_TO_METERS).toFixed(1));
                 }
             }
-            if (Object.keys(updateData).length > 0) {
-                await item.update(updateData);
+            document.system.movement.units = "m";
+            updateData["system.movement"] = document.system.movement;
+        }
+
+        // Aggiornamento Sensi (Senses)
+        if (document.system.senses && document.system.senses.units === "ft") {
+            for (const [key, value] of Object.entries(document.system.senses)) {
+                if (typeof value === 'number' && value > 0) {
+                    document.system.senses[key] = parseFloat((value * FEET_TO_METERS).toFixed(1));
+                }
             }
+            document.system.senses.units = "m";
+            updateData["system.senses"] = document.system.senses;
+        }
+
+        // Aggiornamento Raggio d'azione e Reach
+        if (document.system.range && document.system.range.units === "ft") {
+            if (document.system.range.value) {
+                document.system.range.value = parseFloat((document.system.range.value * FEET_TO_METERS).toFixed(1));
+            }
+            if (document.system.range.reach === "") {
+                document.system.range.reach = 1.5;
+            } else if (document.system.range.reach > 0) {
+                document.system.range.reach = parseFloat((document.system.range.reach * FEET_TO_METERS).toFixed(1));
+            }
+            document.system.range.units = "m";
+            updateData["system.range"] = document.system.range;
+        }
+
+        // Aggiornamento Area di Effetto (Area)
+        if (document.system.target?.template && document.system.target.template.units === "ft") {
+            if (document.system.target.template.width > 0) {
+                document.system.target.template.width = parseFloat((document.system.target.template.width * FEET_TO_METERS).toFixed(1));
+            }
+            if (document.system.target.template.height > 0) {
+                document.system.target.template.height = parseFloat((document.system.target.template.height * FEET_TO_METERS).toFixed(1));
+            }
+            if (document.system.target.template.size > 0) {
+                document.system.target.template.size = parseFloat((document.system.target.template.size * FEET_TO_METERS).toFixed(1));
+            }
+            document.system.target.template.units = "m";
+            updateData["system.target.template"] = document.system.target.template;
         }
     }
 }

@@ -69,6 +69,7 @@ class RebexFixesApp extends FormApplication {
         const fixConcentrationButton = html.find('#fix-concentration-button');
         const fixFeetToMetersButton = html.find('#fix-feet-to-meters-button');
         const fixFeetToMetersButtonPG = html.find('#fix-feet-to-meters-pg-button');
+        const fixFeetToMetersButtonTK = html.find('#fix-feet-to-meters-tk-button');
 
         function updateFormVisibility() {
             const fixType = fixTypeSelect.val();
@@ -126,6 +127,17 @@ class RebexFixesApp extends FormApplication {
             } else if (fixType === "compendium") {
                 const compendiumName = compendiumSelect.val();
                 await CompendiumUtilities.fixFeetToMetersCompendium(compendiumName, 'pg');
+            }
+        });
+
+        fixFeetToMetersButtonTK.on('click', async () => {
+            const fixType = fixTypeSelect.val();
+            if (fixType === "actor") {
+                const actorName = actorSelect.val();
+                await CompendiumUtilities.updateVisionForActor(actorName);
+            } else if (fixType === "compendium") {
+                const compendiumName = compendiumSelect.val();
+                await CompendiumUtilities.updateVisionForCompendium(compendiumName);
             }
         });
     }

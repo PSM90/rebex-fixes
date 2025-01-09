@@ -207,10 +207,6 @@ export class CompendiumUtilities {
         }
     }
 
-
-
-
-
     static async convertItemsToMeters(items) {
         const FEET_TO_METERS = 1.5 / 5;
 
@@ -263,6 +259,162 @@ export class CompendiumUtilities {
                 }
             }
         }
+    }
+
+    // Funzione per aggiornare visione e detection modes per una singola scheda personaggio
+    static async updateVisionForActor(actorName) {
+        const actor = game.actors.getName(actorName);
+        if (!actor) {
+            ui.notifications.error(`Personaggio "${actorName}" non trovato.`);
+            return;
+        }
+
+        const updates = this.transformVision(actor);
+        try {
+            await actor.update(updates);
+            ui.notifications.info(`${actor.name}: Visione e detection modes aggiornati correttamente.`);
+        } catch (err) {
+            console.error(`Errore nell'aggiornamento della visione per ${actor.name}:`, err);
+            ui.notifications.error(`Errore nell'aggiornamento della visione per ${actor.name}.`);
+        }
+    }
+
+    // Funzione per aggiornare visione e detection modes per tutte le schede in un compendio
+    static async updateVisionForCompendium(compendiumName) {
+        const pack = game.packs.get(compendiumName);
+        if (!pack) {
+            ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
+            return;
+        }
+
+        if (pack.locked) {
+            await pack.configure({ locked: false });
+        }
+
+        const documents = await pack.getDocuments();
+
+        ui.notifications.notify(`Aggiornamento visione per ${documents.length} attori nel compendio "${compendiumName}".`);
+
+        const delay = 2000; // Pausa di 2 secondi tra gli aggiornamenti
+
+        for (const [index, actor] of documents.entries()) {
+            const updates = this.transformVision(actor);
+            try {
+                await actor.update(updates);
+                console.log(`${index + 1}/${documents.length}: ${actor.name} - Visione aggiornata.`);
+            } catch (err) {
+                console.error(`Errore nell'aggiornamento della visione per ${actor.name}:`, err);
+            }
+
+            // Pausa prima di passare alla prossima scheda
+            if (index < documents.length - 1) {
+                await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+        }
+
+        ui.notifications.info(`Visione aggiornata per tutti gli attori nel compendio "${compendiumName}".`);
+    }
+
+    // Trasformazione visione e detection modes
+    static transformVision(actor) {
+        const senses = actor.system.attributes.senses;
+        const token = actor.prototypeToken;
+
+        // Prima parte: visione standard
+        let range = 0,
+            type = 'basic';
+
+        if (senses.darkvision) {
+            range = senses.darkvision;
+            type = 'darkvision';
+        }
+        if (!range && senses.blindsight) {
+            range = senses.blindsight;
+            type = 'blindsight';
+        }
+        if (!range && senses.tremorsense) {
+            range = senses.tremorsense;
+            type = 'tremorsense';
+        }
+
+        if (senses.truesight > range) range = senses.truesight;
+
+        token.sight.enabled = true;
+        token.sight.range = range;
+        foundry.utils.mergeObject(token.sight, this.getVisionConfig(type));
+
+        // Seconda parte: detection modes
+        const detectionModes = [];
+        Object.entries(senses).forEach(([sense, range]) => {
+            if (range && this.getDetectionMode(sense)) {
+                detectionModes.push(this.getDetectionMode(sense, range));
+            }
+        });
+
+        detectionModes.push({ id: 'basicSight', enabled: true, range });
+
+        token.detectionModes = detectionModes;
+
+        // Restituisce gli aggiornamenti per la scheda
+        return {
+            'prototypeToken.sight': token.sight,
+            'prototypeToken.detectionModes': token.detectionModes,
+        };
+    }
+
+    // Configurazione visione
+    static getVisionConfig(type) {
+        const vision = {
+            blindsight: {
+                enabled: true,
+                angle: 360,
+                visionMode: 'tremorsense',
+                color: null,
+                attenuation: 0,
+                brightness: 1,
+                saturation: -0.3,
+                contrast: 0.2,
+            },
+            darkvision: {
+                angle: 360,
+                visionMode: 'darkvision',
+                color: null,
+                attenuation: 0,
+                brightness: 0,
+                saturation: -1,
+                contrast: 0,
+            },
+            basic: {
+                angle: 360,
+                visionMode: 'basic',
+                color: null,
+                attenuation: 0,
+                brightness: 0,
+                saturation: 0,
+                contrast: 0,
+            },
+            tremorsense: {
+                enabled: true,
+                angle: 360,
+                visionMode: 'tremorsense',
+                color: null,
+                attenuation: 0,
+                brightness: 1,
+                saturation: -0.3,
+                contrast: 0.2,
+            },
+        };
+        return vision[type] || vision.basic;
+    }
+
+    // Configurazione detection modes
+    static getDetectionMode(sense, range) {
+        const detection = {
+            blindsight: (range) => ({ id: 'senseInvisibility', enabled: true, range }),
+            tremorsense: (range) => ({ id: 'feelTremor', enabled: true, range }),
+            truesight: (range) => ({ id: 'seeAll', enabled: true, range }),
+        };
+        return detection[sense]?.(range);
     }
 }
 

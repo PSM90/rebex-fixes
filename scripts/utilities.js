@@ -416,9 +416,8 @@ export class CompendiumUtilities {
         };
         return detection[sense]?.(range);
     }
-}
 
-export class SpellConcentrationFixer {
+
     static async updateActorSpells(actorName) {
         let actor = game.actors.getName(actorName);
         if (!actor) {

@@ -101,10 +101,10 @@ class RebexFixesApp extends FormApplication {
             const fixType = fixTypeSelect.val();
             if (fixType === "actor") {
                 const actorName = actorSelect.val();
-                await CompendiumUtilities.updateActorSpells(actorName);
+                await SpellConcentrationFixer.updateActorSpells(actorName);
             } else if (fixType === "compendium") {
                 const compendiumName = compendiumSelect.val();
-                await CompendiumUtilities.updateCompendiumSpells(compendiumName);
+                await SpellConcentrationFixer.updateCompendiumSpells(compendiumName);
             }
         });
 

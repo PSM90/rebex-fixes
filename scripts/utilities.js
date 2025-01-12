@@ -458,10 +458,10 @@ export class CompendiumUtilities {
         const documents = await pack.getDocuments();
         const totalDocs = documents.length;
 
-        // Creazione della barra di avanzamento
+        // Creazione della finestra di avanzamento
         const progress = new Application({
             title: "Aggiornamento Percorsi Token",
-            template: `
+            content: `
                 <div class="form-group">
                     <label id="progress-label">Aggiornamento token: 0/${totalDocs}</label>
                     <progress id="progress-bar" value="0" max="${totalDocs}" style="width: 100%;"></progress>
@@ -485,13 +485,18 @@ export class CompendiumUtilities {
             }
 
             // Aggiorna la barra di avanzamento
-            document.getElementById("progress-bar").value = i + 1;
-            document.getElementById("progress-label").textContent = `Aggiornamento token: ${i + 1}/${totalDocs}`;
+            const progressBar = document.getElementById("progress-bar");
+            const progressLabel = document.getElementById("progress-label");
+            if (progressBar && progressLabel) {
+                progressBar.value = i + 1;
+                progressLabel.textContent = `Aggiornamento token: ${i + 1}/${totalDocs}`;
+            }
+
             await new Promise((resolve) => setTimeout(resolve, 500)); // Pausa per evitare sovraccarico
         }
 
         ui.notifications.info('Aggiornamento completato!');
-        progress.close(); // Chiudi la barra di avanzamento
+        progress.close();
     }
 }
 

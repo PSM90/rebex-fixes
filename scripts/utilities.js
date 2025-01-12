@@ -472,6 +472,18 @@ export class CompendiumUtilities {
         });
         progress.render(true);
 
+        async function fileExists(filePath) {
+            const dirPath = filePath.substring(0, filePath.lastIndexOf("/") + 1); // Ottieni la directory
+            const fileName = filePath.split("/").pop(); // Ottieni il nome del file
+            try {
+                const result = await FilePicker.browse("data", dirPath);
+                return result.files.some(file => file.endsWith(fileName));
+            } catch (error) {
+                console.error(`Errore durante la verifica del file: ${filePath}`, error);
+                return false;
+            }
+        }
+
         for (let i = 0; i < totalDocs; i++) {
             const actor = documents[i];
             const updates = {};
@@ -480,11 +492,11 @@ export class CompendiumUtilities {
             if (updateToken && actor.prototypeToken?.texture?.src) {
                 const tokenPath = actor.prototypeToken.texture.src;
                 if (tokenPath) {
-                    const tokenFileName = tokenPath.split('/').pop(); // Nome file con estensione
+                    const tokenFileName = tokenPath.split("/").pop(); // Nome file con estensione
                     const updatedTokenPath = `${newPath}${tokenFileName}`;
 
                     // Verifica se il file esiste
-                    const tokenExists = await FilePicker.exists(updatedTokenPath);
+                    const tokenExists = await fileExists(updatedTokenPath);
                     if (tokenExists) {
                         updates['prototypeToken.texture.src'] = updatedTokenPath;
                     } else {
@@ -498,11 +510,11 @@ export class CompendiumUtilities {
             if (updatePortrait && actor.img) {
                 const portraitPath = actor.img;
                 if (portraitPath) {
-                    const portraitFileName = portraitPath.split('/').pop(); // Nome file con estensione
+                    const portraitFileName = portraitPath.split("/").pop(); // Nome file con estensione
                     const updatedPortraitPath = `${newPath}${portraitFileName}`;
 
                     // Verifica se il file esiste
-                    const portraitExists = await FilePicker.exists(updatedPortraitPath);
+                    const portraitExists = await fileExists(updatedPortraitPath);
                     if (portraitExists) {
                         updates['img'] = updatedPortraitPath;
                     } else {
@@ -531,9 +543,10 @@ export class CompendiumUtilities {
             await new Promise((resolve) => setTimeout(resolve, 500)); // Pausa per evitare sovraccarico
         }
 
-        ui.notifications.info('Aggiornamento completato!');
+        ui.notifications.info("Aggiornamento completato!");
         progress.close();
     }
+
 }
 
 export class SpellConcentrationFixer {

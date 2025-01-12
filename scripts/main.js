@@ -196,6 +196,8 @@ class TokenPathFixForm extends FormApplication {
         html.find('#updatePath').on('click', async () => {
             const compendiumName = html.find('#compendiumSelect').val();
             const newPath = html.find('#newTokenPath').val().trim();
+            const updateToken = html.find("#update-token").prop("checked");
+            const updatePortrait = html.find("#update-portrait").prop("checked");
 
             if (!compendiumName) {
                 ui.notifications.error('Seleziona un compendio.');
@@ -206,7 +208,7 @@ class TokenPathFixForm extends FormApplication {
                 return;
             }
 
-            await CompendiumUtilities.fixTokenPaths(compendiumName, newPath);
+            await CompendiumUtilities.fixTokenPaths(compendiumName, newPath, updateToken, updatePortrait);
             ui.notifications.info('Percorsi aggiornati con successo!');
         });
     }

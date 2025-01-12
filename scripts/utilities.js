@@ -443,8 +443,7 @@ export class CompendiumUtilities {
         return mostCommonPath;
     }
 
-    /** Modifica i percorsi dei token nel compendio */
-    static async fixTokenPaths(compendiumName, newPath) {
+    static async fixTokenPaths(compendiumName, newPath, updateToken = true, updatePortrait = true) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
             ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
@@ -474,12 +473,24 @@ export class CompendiumUtilities {
 
         for (let i = 0; i < totalDocs; i++) {
             const actor = documents[i];
-            const tokenPath = actor.prototypeToken.texture.src;
-            const tokenFileName = tokenPath.substring(tokenPath.lastIndexOf('/') + 1);
-            const updatedPath = `${newPath}${tokenFileName}`;
+            const updates = {};
+
+            if (updateToken) {
+                const tokenPath = actor.prototypeToken.texture.src;
+                const tokenFileName = tokenPath.substring(tokenPath.lastIndexOf('/') + 1);
+                const updatedTokenPath = `${newPath}${tokenFileName}`;
+                updates['prototypeToken.texture.src'] = updatedTokenPath;
+            }
+
+            if (updatePortrait) {
+                const portraitPath = actor.img;
+                const portraitFileName = portraitPath.substring(portraitPath.lastIndexOf('/') + 1);
+                const updatedPortraitPath = `${newPath}${portraitFileName}`;
+                updates['img'] = updatedPortraitPath;
+            }
 
             try {
-                await actor.update({ 'prototypeToken.texture.src': updatedPath });
+                await actor.update(updates);
             } catch (error) {
                 console.error(`Errore aggiornando "${actor.name}":`, error);
             }

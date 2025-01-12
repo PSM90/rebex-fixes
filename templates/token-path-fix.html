@@ -1,15 +1,22 @@
 <form>
     <div class="form-group">
         <label>Seleziona Compendio</label>
-        <select id="compendium-select">
+        <select id="compendiumSelect" name="compendiumSelect">
             {{#each compendiums}}
-                <option value="{{this.collection}}">{{this.metadata.label}}</option>
+                <option value="{{this.name}}">{{this.label}}</option>
             {{/each}}
         </select>
     </div>
     <div class="form-group">
-        <label>Percorso Base</label>
-        <input type="text" id="new-path" placeholder="Inserisci nuovo percorso" />
+        <button type="button" id="findCommonPath" class="button">Trova Percorso Token Ricorrente</button>
+    </div>
+    <div class="form-group">
+        <label>Percorso più ricorrente</label>
+        <p id="mostCommonPath">{{mostCommonPath}}</p>
+    </div>
+    <div class="form-group">
+        <label>Nuovo Percorso Token</label>
+        <input type="text" id="newTokenPath" name="newTokenPath" placeholder="Inserisci nuovo percorso (es. tokens/newPath/)">
     </div>
     <div class="form-group">
         <label><input type="checkbox" id="update-token" checked /> Aggiorna Token</label>
@@ -18,6 +25,6 @@
         <label><input type="checkbox" id="update-portrait" checked /> Aggiorna Ritratto</label>
     </div>
     <div class="form-group">
-        <button id="update-paths" class="btn btn-primary">Aggiorna Percorsi</button>
+        <button type="button" id="updatePath" class="button">Applica Nuovo Percorso</button>
     </div>
 </form>

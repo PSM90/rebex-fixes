@@ -443,6 +443,7 @@ export class CompendiumUtilities {
         return mostCommonPath;
     }
 
+    /** Modifica i percorsi dei token nel compendio */
     static async fixTokenPaths(compendiumName, newPath, updateToken = true, updatePortrait = true) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
@@ -489,7 +490,7 @@ export class CompendiumUtilities {
                 updates['img'] = updatedPortraitPath;
             }
 
-            try {
+             try {
                 await actor.update(updates);
             } catch (error) {
                 console.error(`Errore aggiornando "${actor.name}":`, error);

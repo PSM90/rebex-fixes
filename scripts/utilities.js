@@ -481,7 +481,7 @@ export class CompendiumUtilities {
                 const tokenPath = actor.prototypeToken.texture.src;
                 if (tokenPath) {
                     const tokenFileName = tokenPath.split('/').pop(); // Nome file con estensione
-                    updates['prototypeToken.texture.src'] = `${newPath}/${tokenFileName}`;
+                    updates['prototypeToken.texture.src'] = `${newPath}${tokenFileName}`;
                 }
             }
 
@@ -490,7 +490,7 @@ export class CompendiumUtilities {
                 const portraitPath = actor.img;
                 if (portraitPath) {
                     const portraitFileName = portraitPath.split('/').pop(); // Nome file con estensione
-                    updates['img'] = `${newPath}/${portraitFileName}`;
+                    updates['img'] = `${newPath}${portraitFileName}`;
                 }
             }
 

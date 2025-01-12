@@ -481,7 +481,16 @@ export class CompendiumUtilities {
                 const tokenPath = actor.prototypeToken.texture.src;
                 if (tokenPath) {
                     const tokenFileName = tokenPath.split('/').pop(); // Nome file con estensione
-                    updates['prototypeToken.texture.src'] = `${newPath}${tokenFileName}`;
+                    const updatedTokenPath = `${newPath}${tokenFileName}`;
+
+                    // Verifica se il file esiste
+                    const tokenExists = await FilePicker.exists(updatedTokenPath);
+                    if (tokenExists) {
+                        updates['prototypeToken.texture.src'] = updatedTokenPath;
+                    } else {
+                        console.error(`Non trovato: ${updatedTokenPath}`);
+                        ui.notifications.error(`Non trovato: ${updatedTokenPath}`);
+                    }
                 }
             }
 
@@ -490,7 +499,16 @@ export class CompendiumUtilities {
                 const portraitPath = actor.img;
                 if (portraitPath) {
                     const portraitFileName = portraitPath.split('/').pop(); // Nome file con estensione
-                    updates['img'] = `${newPath}${portraitFileName}`;
+                    const updatedPortraitPath = `${newPath}${portraitFileName}`;
+
+                    // Verifica se il file esiste
+                    const portraitExists = await FilePicker.exists(updatedPortraitPath);
+                    if (portraitExists) {
+                        updates['img'] = updatedPortraitPath;
+                    } else {
+                        console.error(`Non trovato: ${updatedPortraitPath}`);
+                        ui.notifications.error(`Non trovato: ${updatedPortraitPath}`);
+                    }
                 }
             }
 
@@ -516,7 +534,6 @@ export class CompendiumUtilities {
         ui.notifications.info('Aggiornamento completato!');
         progress.close();
     }
-
 }
 
 export class SpellConcentrationFixer {

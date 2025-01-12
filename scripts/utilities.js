@@ -476,22 +476,28 @@ export class CompendiumUtilities {
             const actor = documents[i];
             const updates = {};
 
-            if (updateToken) {
+            // Aggiorna il percorso del token
+            if (updateToken && actor.prototypeToken?.texture?.src) {
                 const tokenPath = actor.prototypeToken.texture.src;
-                const tokenFileName = tokenPath.substring(tokenPath.lastIndexOf('/') + 1);
-                const updatedTokenPath = `${newPath}${tokenFileName}`;
-                updates['prototypeToken.texture.src'] = updatedTokenPath;
+                if (tokenPath) {
+                    const tokenFileName = tokenPath.split('/').pop(); // Nome file con estensione
+                    updates['prototypeToken.texture.src'] = `${newPath}/${tokenFileName}`;
+                }
             }
 
-            if (updatePortrait) {
+            // Aggiorna il percorso del ritratto
+            if (updatePortrait && actor.img) {
                 const portraitPath = actor.img;
-                const portraitFileName = portraitPath.substring(portraitPath.lastIndexOf('/') + 1);
-                const updatedPortraitPath = `${newPath}${portraitFileName}`;
-                updates['img'] = updatedPortraitPath;
+                if (portraitPath) {
+                    const portraitFileName = portraitPath.split('/').pop(); // Nome file con estensione
+                    updates['img'] = `${newPath}/${portraitFileName}`;
+                }
             }
 
-             try {
-                await actor.update(updates);
+            try {
+                if (Object.keys(updates).length > 0) {
+                    await actor.update(updates);
+                }
             } catch (error) {
                 console.error(`Errore aggiornando "${actor.name}":`, error);
             }
@@ -510,6 +516,7 @@ export class CompendiumUtilities {
         ui.notifications.info('Aggiornamento completato!');
         progress.close();
     }
+
 }
 
 export class SpellConcentrationFixer {

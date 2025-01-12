@@ -417,7 +417,7 @@ export class CompendiumUtilities {
         return detection[sense]?.(range);
     }
 
-    /** Ottieni il path più ricorrente nel compendio */
+     /** Ottieni il path più ricorrente nel compendio */
     static async getMostCommonPath(compendiumName) {
         const pack = game.packs.get(compendiumName);
         if (!pack) {
@@ -458,7 +458,6 @@ export class CompendiumUtilities {
         const documents = await pack.getDocuments();
         const totalDocs = documents.length;
 
-        // Barra di completamento
         let progressNotification = ui.notifications.info(`Aggiornamento token: 0/${totalDocs}`, { permanent: true });
 
         for (let i = 0; i < totalDocs; i++) {

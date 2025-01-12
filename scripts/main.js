@@ -175,30 +175,39 @@ class TokenPathFixForm extends FormApplication {
         return { compendiums, mostCommonPath: this.mostCommonPath };
     }
 
-    /** Gestisci invio del form */
-    async _updateObject(event, formData) {
-        const compendiumName = formData.compendiumSelect;
-        const newPath = formData.newTokenPath.trim();
-
-        if (!newPath.endsWith('/')) {
-            ui.notifications.error('Il percorso deve terminare con una "/"');
-            return;
-        }
-
-        await CompendiumUtilities.fixTokenPaths(compendiumName, newPath);
-        ui.notifications.info('Percorsi aggiornati con successo!');
-    }
-
     /** Eventi del form */
     activateListeners(html) {
         super.activateListeners(html);
 
-        // Aggiorna il path più ricorrente
-        html.find('#compendiumSelect').on('change', async (event) => {
-            const compendiumName = event.target.value;
+        // Bottone per trovare il percorso più ricorrente
+        html.find('#findCommonPath').on('click', async () => {
+            const compendiumName = html.find('#compendiumSelect').val();
+            if (!compendiumName) {
+                ui.notifications.error('Seleziona un compendio.');
+                return;
+            }
+
             const mostCommonPath = await CompendiumUtilities.getMostCommonPath(compendiumName);
             this.mostCommonPath = mostCommonPath || 'Nessun dato disponibile';
             html.find('#mostCommonPath').text(this.mostCommonPath);
+        });
+
+        // Bottone per applicare il nuovo percorso
+        html.find('#updatePath').on('click', async () => {
+            const compendiumName = html.find('#compendiumSelect').val();
+            const newPath = html.find('#newTokenPath').val().trim();
+
+            if (!compendiumName) {
+                ui.notifications.error('Seleziona un compendio.');
+                return;
+            }
+            if (!newPath.endsWith('/')) {
+                ui.notifications.error('Il percorso deve terminare con una "/"');
+                return;
+            }
+
+            await CompendiumUtilities.fixTokenPaths(compendiumName, newPath);
+            ui.notifications.info('Percorsi aggiornati con successo!');
         });
     }
 }

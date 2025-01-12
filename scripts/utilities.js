@@ -472,6 +472,8 @@ export class CompendiumUtilities {
         });
         progress.render(true);
 
+        const notFoundFiles = new Set(); // Set per tracciare i file non trovati
+
         async function fileExists(filePath) {
             const dirPath = filePath.substring(0, filePath.lastIndexOf("/") + 1); // Ottieni la directory
             const fileName = filePath.split("/").pop(); // Ottieni il nome del file
@@ -499,9 +501,10 @@ export class CompendiumUtilities {
                     const tokenExists = await fileExists(updatedTokenPath);
                     if (tokenExists) {
                         updates['prototypeToken.texture.src'] = updatedTokenPath;
-                    } else {
+                    } else if (!notFoundFiles.has(updatedTokenPath)) {
                         console.error(`Non trovato: ${updatedTokenPath}`);
                         ui.notifications.error(`Non trovato: ${updatedTokenPath}`);
+                        notFoundFiles.add(updatedTokenPath);
                     }
                 }
             }
@@ -517,9 +520,10 @@ export class CompendiumUtilities {
                     const portraitExists = await fileExists(updatedPortraitPath);
                     if (portraitExists) {
                         updates['img'] = updatedPortraitPath;
-                    } else {
+                    } else if (!notFoundFiles.has(updatedPortraitPath)) {
                         console.error(`Non trovato: ${updatedPortraitPath}`);
                         ui.notifications.error(`Non trovato: ${updatedPortraitPath}`);
+                        notFoundFiles.add(updatedPortraitPath);
                     }
                 }
             }
@@ -546,7 +550,6 @@ export class CompendiumUtilities {
         ui.notifications.info("Aggiornamento completato!");
         progress.close();
     }
-
 }
 
 export class SpellConcentrationFixer {

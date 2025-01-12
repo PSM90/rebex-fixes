@@ -458,7 +458,19 @@ export class CompendiumUtilities {
         const documents = await pack.getDocuments();
         const totalDocs = documents.length;
 
-        let progressNotification = ui.notifications.info(`Aggiornamento token: 0/${totalDocs}`, { permanent: true });
+        // Creazione della barra di avanzamento
+        const progress = new Application({
+            title: "Aggiornamento Percorsi Token",
+            template: `
+                <div class="form-group">
+                    <label id="progress-label">Aggiornamento token: 0/${totalDocs}</label>
+                    <progress id="progress-bar" value="0" max="${totalDocs}" style="width: 100%;"></progress>
+                </div>
+            `,
+            buttons: {},
+            close: () => null,
+        });
+        progress.render(true);
 
         for (let i = 0; i < totalDocs; i++) {
             const actor = documents[i];
@@ -472,12 +484,14 @@ export class CompendiumUtilities {
                 console.error(`Errore aggiornando "${actor.name}":`, error);
             }
 
-            progressNotification.text = `Aggiornamento token: ${i + 1}/${totalDocs}`;
+            // Aggiorna la barra di avanzamento
+            document.getElementById("progress-bar").value = i + 1;
+            document.getElementById("progress-label").textContent = `Aggiornamento token: ${i + 1}/${totalDocs}`;
             await new Promise((resolve) => setTimeout(resolve, 500)); // Pausa per evitare sovraccarico
         }
 
-        progressNotification.text = 'Aggiornamento completato!';
-        progressNotification.remove();
+        ui.notifications.info('Aggiornamento completato!');
+        progress.close(); // Chiudi la barra di avanzamento
     }
 }
 

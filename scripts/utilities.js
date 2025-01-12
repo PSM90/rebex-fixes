@@ -416,6 +416,70 @@ export class CompendiumUtilities {
         };
         return detection[sense]?.(range);
     }
+
+    /** Ottieni il path più ricorrente nel compendio */
+    static async getMostCommonPath(compendiumName) {
+        const pack = game.packs.get(compendiumName);
+        if (!pack) {
+            ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
+            return null;
+        }
+
+        const documents = await pack.getDocuments();
+        const paths = documents.map((doc) => {
+            const tokenPath = doc.prototypeToken.texture.src;
+            return tokenPath.substring(0, tokenPath.lastIndexOf('/') + 1); // Rimuovi il nome del file
+        });
+
+        // Trova il path più ricorrente
+        const pathFrequency = paths.reduce((acc, path) => {
+            acc[path] = (acc[path] || 0) + 1;
+            return acc;
+        }, {});
+        const mostCommonPath = Object.keys(pathFrequency).reduce((a, b) =>
+            pathFrequency[a] > pathFrequency[b] ? a : b
+        );
+
+        return mostCommonPath;
+    }
+
+    /** Modifica i percorsi dei token nel compendio */
+    static async fixTokenPaths(compendiumName, newPath) {
+        const pack = game.packs.get(compendiumName);
+        if (!pack) {
+            ui.notifications.error(`Compendio "${compendiumName}" non trovato.`);
+            return;
+        }
+
+        if (pack.locked) {
+            await pack.configure({ locked: false });
+        }
+
+        const documents = await pack.getDocuments();
+        const totalDocs = documents.length;
+
+        // Barra di completamento
+        let progressNotification = ui.notifications.info(`Aggiornamento token: 0/${totalDocs}`, { permanent: true });
+
+        for (let i = 0; i < totalDocs; i++) {
+            const actor = documents[i];
+            const tokenPath = actor.prototypeToken.texture.src;
+            const tokenFileName = tokenPath.substring(tokenPath.lastIndexOf('/') + 1);
+            const updatedPath = `${newPath}${tokenFileName}`;
+
+            try {
+                await actor.update({ 'prototypeToken.texture.src': updatedPath });
+            } catch (error) {
+                console.error(`Errore aggiornando "${actor.name}":`, error);
+            }
+
+            progressNotification.text = `Aggiornamento token: ${i + 1}/${totalDocs}`;
+            await new Promise((resolve) => setTimeout(resolve, 500)); // Pausa per evitare sovraccarico
+        }
+
+        progressNotification.text = 'Aggiornamento completato!';
+        progressNotification.remove();
+    }
 }
 
 export class SpellConcentrationFixer {

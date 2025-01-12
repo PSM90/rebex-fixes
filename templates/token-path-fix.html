@@ -1,0 +1,21 @@
+<form>
+    <div class="form-group">
+        <label>Seleziona Compendio</label>
+        <select id="compendiumSelect" name="compendiumSelect">
+            {{#each compendiums}}
+                <option value="{{this.name}}">{{this.label}}</option>
+            {{/each}}
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Percorso più ricorrente</label>
+        <p id="mostCommonPath">{{mostCommonPath}}</p>
+    </div>
+    <div class="form-group">
+        <label>Nuovo Percorso Token</label>
+        <input type="text" id="newTokenPath" name="newTokenPath" placeholder="Inserisci nuovo percorso (es. tokens/newPath/)">
+    </div>
+    <div class="form-group">
+        <button type="submit" class="button">Applica</button>
+    </div>
+</form>

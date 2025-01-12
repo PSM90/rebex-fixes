@@ -9,6 +9,14 @@ function registerSettings() {
         type: RebexFixesApp,
         restricted: true
     });
+    game.settings.registerMenu('rebex-fixes', 'tokenPathFixMenu', {
+        name: 'Fix Percorsi Token',
+        label: 'Apri Scheda',
+        hint: 'Modifica massivamente i percorsi dei token nei compendi selezionati.',
+        icon: 'fas fa-map-marker-alt',
+        type: TokenPathFixForm,
+        restricted: true,
+    });
 
     game.settings.register("rebex-fixes", "dummySetting", {
         name: "Rebex Fixes Setting",
@@ -139,6 +147,58 @@ class RebexFixesApp extends FormApplication {
                 const compendiumName = compendiumSelect.val();
                 await CompendiumUtilities.updateVisionForCompendium(compendiumName);
             }
+        });
+    }
+}
+
+class TokenPathFixForm extends FormApplication {
+    constructor(...args) {
+        super(...args);
+        this.mostCommonPath = ''; // Path più ricorrente
+    }
+
+    static get defaultOptions() {
+        return mergeObject(super.defaultOptions, {
+            id: 'token-path-fix-form',
+            title: 'Fix Percorsi Token',
+            template: 'modules/rebex-fixes/templates/token-path-fix.html',
+            width: 600,
+            height: 'auto',
+        });
+    }
+
+    /** Ottieni i dati per la scheda */
+    async getData() {
+        const compendiums = game.packs.contents
+            .filter((pack) => pack.metadata.type === 'Actor')
+            .map((pack) => ({ name: pack.collection, label: pack.metadata.label }));
+        return { compendiums, mostCommonPath: this.mostCommonPath };
+    }
+
+    /** Gestisci invio del form */
+    async _updateObject(event, formData) {
+        const compendiumName = formData.compendiumSelect;
+        const newPath = formData.newTokenPath.trim();
+
+        if (!newPath.endsWith('/')) {
+            ui.notifications.error('Il percorso deve terminare con una "/"');
+            return;
+        }
+
+        await CompendiumUtilities.fixTokenPaths(compendiumName, newPath);
+        ui.notifications.info('Percorsi aggiornati con successo!');
+    }
+
+    /** Eventi del form */
+    activateListeners(html) {
+        super.activateListeners(html);
+
+        // Aggiorna il path più ricorrente
+        html.find('#compendiumSelect').on('change', async (event) => {
+            const compendiumName = event.target.value;
+            const mostCommonPath = await CompendiumUtilities.getMostCommonPath(compendiumName);
+            this.mostCommonPath = mostCommonPath || 'Nessun dato disponibile';
+            html.find('#mostCommonPath').text(this.mostCommonPath);
         });
     }
 }

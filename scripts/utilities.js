@@ -475,23 +475,28 @@ export class CompendiumUtilities {
         const notFoundFiles = new Set(); // Set per tracciare i file non trovati
 
         async function fileExists(filePath) {
-            // Rimuovi il prefisso "/" se presente, per evitare problemi con il percorso assoluto
-            const sanitizedPath = filePath.startsWith("/") ? filePath.substring(1) : filePath;
+            // Rimuovi query string o hash (es. "?12345" o "#id")
+            const sanitizedPath = filePath.split("?")[0].split("#")[0];
 
-            // Ottieni la directory e il nome del file
-            const dirPath = sanitizedPath.substring(0, sanitizedPath.lastIndexOf("/") + 1);
-            const fileName = sanitizedPath.split("/").pop();
+            // Assicurati che il percorso sia relativo alla directory radice di Foundry
+            const relativePath = sanitizedPath;
+
+            // Ottieni directory e nome del file
+            const dirPath = relativePath.substring(0, relativePath.lastIndexOf("/") + 1);
+            const fileName = relativePath.split("/").pop();
 
             try {
+                // Usa FilePicker per esplorare la directory
                 const result = await FilePicker.browse("data", dirPath);
 
-                // Verifica se il file esiste nella lista restituita
+                // Verifica se il file esiste
                 return result.files.some(file => file.endsWith(fileName));
             } catch (error) {
                 console.error(`Errore durante la verifica del file: ${filePath}`, error);
                 return false;
             }
         }
+
 
 
         for (let i = 0; i < totalDocs; i++) {

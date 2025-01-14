@@ -475,16 +475,24 @@ export class CompendiumUtilities {
         const notFoundFiles = new Set(); // Set per tracciare i file non trovati
 
         async function fileExists(filePath) {
-            const dirPath = filePath.substring(0, filePath.lastIndexOf("/") + 1); // Ottieni la directory
-            const fileName = filePath.split("/").pop(); // Ottieni il nome del file
+            // Rimuovi il prefisso "/" se presente, per evitare problemi con il percorso assoluto
+            const sanitizedPath = filePath.startsWith("/") ? filePath.substring(1) : filePath;
+
+            // Ottieni la directory e il nome del file
+            const dirPath = sanitizedPath.substring(0, sanitizedPath.lastIndexOf("/") + 1);
+            const fileName = sanitizedPath.split("/").pop();
+
             try {
                 const result = await FilePicker.browse("data", dirPath);
+
+                // Verifica se il file esiste nella lista restituita
                 return result.files.some(file => file.endsWith(fileName));
             } catch (error) {
                 console.error(`Errore durante la verifica del file: ${filePath}`, error);
                 return false;
             }
         }
+
 
         for (let i = 0; i < totalDocs; i++) {
             const actor = documents[i];

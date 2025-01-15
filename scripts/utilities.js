@@ -498,35 +498,17 @@ export class CompendiumUtilities {
         // }
 
         async function fileExists(filePath) {
-            const expectedDomain = "https://dev.arkadnd.site";
-            const currentDomain = window.location.origin;
-
-            if (currentDomain === expectedDomain) {
-                const sanitizedPath = filePath.split("?")[0].split("#")[0];
-                const fullURL = `${currentDomain}/${sanitizedPath}`;
-
-                try {
-                    const response = await fetch(fullURL, { method: "HEAD" });
-                    return response.ok;
-                } catch (error) {
-                    console.error(`Errore durante la verifica del file (URL assoluto): ${fullURL}`, error);
-                    return false;
-                }
-            }
-
-            const dirPath = filePath.substring(0, filePath.lastIndexOf("/") + 1);
-            const fileName = filePath.split("/").pop();
+            const sanitizedPath = filePath.split("?")[0].split("#")[0]; // Rimuove query string o anchor dal filePath
+            const fullURL = `${window.location.origin}/${sanitizedPath}`; // Combina il dominio corrente con il percorso
 
             try {
-                const result = await FilePicker.browse("data", dirPath);
-                return result.files.some(file => file.endsWith(fileName));
+                const response = await fetch(fullURL, { method: "HEAD" });
+                return response.ok; // Verifica se il file esiste
             } catch (error) {
-                console.error(`Errore durante la verifica del file (FilePicker): ${filePath}`, error);
+                console.error(`Errore durante la verifica del file (URL assoluto): ${fullURL}`, error);
                 return false;
             }
         }
-
-
 
         for (let i = 0; i < totalDocs; i++) {
             const actor = documents[i];

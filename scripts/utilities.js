@@ -474,25 +474,54 @@ export class CompendiumUtilities {
 
         const notFoundFiles = new Set(); // Set per tracciare i file non trovati
 
+        // async function fileExists(filePath) {
+        //     // Rimuovi query string o hash (es. "?12345" o "#id")
+        //     const sanitizedPath = filePath.split("?")[0].split("#")[0];
+        //
+        //     // Assicurati che il percorso sia relativo alla directory radice di Foundry
+        //     const relativePath = sanitizedPath;
+        //
+        //     // Ottieni directory e nome del file
+        //     const dirPath = relativePath.substring(0, relativePath.lastIndexOf("/") + 1);
+        //     const fileName = relativePath.split("/").pop();
+        //
+        //     try {
+        //         // Usa FilePicker per esplorare la directory
+        //         const result = await FilePicker.browse("data", dirPath);
+        //
+        //         // Verifica se il file esiste
+        //         return result.files.some(file => file.endsWith(fileName));
+        //     } catch (error) {
+        //         console.error(`Errore durante la verifica del file: ${filePath}`, error);
+        //         return false;
+        //     }
+        // }
+
         async function fileExists(filePath) {
-            // Rimuovi query string o hash (es. "?12345" o "#id")
-            const sanitizedPath = filePath.split("?")[0].split("#")[0];
+            const expectedDomain = "https://dev.arkadnd.site";
+            const currentDomain = window.location.origin;
 
-            // Assicurati che il percorso sia relativo alla directory radice di Foundry
-            const relativePath = sanitizedPath;
+            if (currentDomain === expectedDomain) {
+                const sanitizedPath = filePath.split("?")[0].split("#")[0];
+                const fullURL = `${currentDomain}/${sanitizedPath}`;
 
-            // Ottieni directory e nome del file
-            const dirPath = relativePath.substring(0, relativePath.lastIndexOf("/") + 1);
-            const fileName = relativePath.split("/").pop();
+                try {
+                    const response = await fetch(fullURL, { method: "HEAD" });
+                    return response.ok;
+                } catch (error) {
+                    console.error(`Errore durante la verifica del file (URL assoluto): ${fullURL}`, error);
+                    return false;
+                }
+            }
+
+            const dirPath = filePath.substring(0, filePath.lastIndexOf("/") + 1);
+            const fileName = filePath.split("/").pop();
 
             try {
-                // Usa FilePicker per esplorare la directory
                 const result = await FilePicker.browse("data", dirPath);
-
-                // Verifica se il file esiste
                 return result.files.some(file => file.endsWith(fileName));
             } catch (error) {
-                console.error(`Errore durante la verifica del file: ${filePath}`, error);
+                console.error(`Errore durante la verifica del file (FilePicker): ${filePath}`, error);
                 return false;
             }
         }
